@@ -4,9 +4,7 @@
 <MudAppBar Color="Color.Primary" Elevation="4">
     <MudText Typo="Typo.h6">NBG Touchscreen Admin</MudText>
     <MudSpacer />
-    <AuthorizeView Roles="Admin">
-        <MudButton Variant="Variant.Outlined" OnClick="OpenCreateUser">Create user</MudButton>
-    </AuthorizeView>
+    <MudButton Variant="Variant.Outlined" OnClick="OpenCreateUser">Create user</MudButton>
 </MudAppBar>
 
 @code {

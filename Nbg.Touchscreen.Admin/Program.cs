@@ -43,8 +43,8 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddScoped<AuthenticationStateProvider,
-    RevalidatingIdentityAuthenticationStateProvider<ApplicationUser>>();
+//builder.Services.AddScoped<AuthenticationStateProvider,
+//    RevalidatingIdentityAuthenticationStateProvider<ApplicationUser>>();
 
 
 var app = builder.Build();
@@ -52,7 +52,6 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await ctx.Database.MigrateAsync();
 
     var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
     var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
