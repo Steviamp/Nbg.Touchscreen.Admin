@@ -29,8 +29,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();               
 builder.Services.AddHttpContextAccessor();         
-builder.Services.AddCascadingAuthenticationState();
-
 
 var app = builder.Build();
 
