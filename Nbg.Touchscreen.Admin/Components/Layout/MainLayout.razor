@@ -1,13 +1,34 @@
-﻿@using MudBlazor
+﻿@rendermode InteractiveServer
+@using MudBlazor
 @using Nbg.Touchscreen.Admin.Components.Dialogs
+@inherits LayoutComponentBase
 
-<MudAppBar Color="Color.Primary" Elevation="4">
-    <MudText Typo="Typo.h6">NBG Touchscreen Admin</MudText>
-    <MudSpacer />
-    <MudButton Variant="Variant.Outlined" OnClick="OpenCreateUser">Create user</MudButton>
-</MudAppBar>
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+
+    <MudAppBar Color="Color.Primary" Elevation="4">
+        <MudText Typo="Typo.h6">NBG Touchscreen Admin</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Outlined" OnClick="OpenCreateUser">Create user</MudButton>
+    </MudAppBar>
+
+    <MudDrawer Open="true" Anchor="Anchor.Start" Variant="DrawerVariant.Mini">
+        <MudNavMenu>
+            <MudNavLink Href="" Match="NavLinkMatch.All">Dashboard</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+
+</MudLayout>
 
 @code {
     [Inject] IDialogService DialogService { get; set; } = default!;
-    private void OpenCreateUser() => DialogService.Show<CreateUserDialog>("Create user");
+    private void OpenCreateUser()
+        => DialogService.Show<CreateUserDialog>("Create user");
 }
