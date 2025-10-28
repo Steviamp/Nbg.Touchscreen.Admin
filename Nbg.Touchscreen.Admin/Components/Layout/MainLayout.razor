@@ -1,0 +1,15 @@
+﻿@using MudBlazor
+@using Nbg.Touchscreen.Admin.Components.Dialogs
+
+<MudAppBar Color="Color.Primary" Elevation="4">
+    <MudText Typo="Typo.h6">NBG Touchscreen Admin</MudText>
+    <MudSpacer />
+    <AuthorizeView Roles="Admin">
+        <MudButton Variant="Variant.Outlined" OnClick="OpenCreateUser">Create user</MudButton>
+    </AuthorizeView>
+</MudAppBar>
+
+@code {
+    [Inject] IDialogService DialogService { get; set; } = default!;
+    private void OpenCreateUser() => DialogService.Show<CreateUserDialog>("Create user");
+}

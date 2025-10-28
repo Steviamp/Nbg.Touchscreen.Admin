@@ -1,0 +1,52 @@
+﻿@using MudBlazor
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Identity
+@using Nbg.Touchscreen.Admin.Data
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" OnValidSubmit="CreateUser">
+            <MudTextField @bind-Value="_email" Label="Email" Required="true" />
+            <MudTextField @bind-Value="_displayName" Label="Display name" />
+            <MudTextField @bind-Value="_password" Label="Password" InputType="InputType.Password" Required="true" />
+
+            <MudSelect T="string" Label="Role" @bind-Value="_role" Required="true">
+                <MudSelectItem Value="Admin">Admin</MudSelectItem>
+                <MudSelectItem Value="Editor">Editor</MudSelectItem>
+                <MudSelectItem Value="Viewer">Viewer</MudSelectItem>
+            </MudSelect>
+
+            <MudText Color="Color.Error">@_error</MudText>
+            <MudButton Type="Submit" Class="mt-4">Create</MudButton>
+        </MudForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public MudDialogInstance? MudDialog { get; set; }
+    [Inject] public UserManager<ApplicationUser> UserManager { get; set; } = default!;
+    [Inject] public RoleManager<IdentityRole<Guid>> RoleManager { get; set; } = default!;
+
+    private MudForm? _form;
+    private string _email = "";
+    private string _displayName = "";
+    private string _password = "";
+    private string _role = "Viewer";
+    private string? _error;
+
+    private async Task CreateUser()
+    {
+        if (!await RoleManager.RoleExistsAsync(_role))
+            await RoleManager.CreateAsync(new IdentityRole<Guid>(_role));
+
+        var user = new ApplicationUser { UserName = _email, Email = _email, DisplayName = _displayName };
+        var result = await UserManager.CreateAsync(user, _password);
+        if (!result.Succeeded)
+        {
+            _error = string.Join(" ", result.Errors.Select(e => e.Description));
+            return;
+        }
+        await UserManager.AddToRoleAsync(user, _role);
+        MudDialog?.Close();  
+    }
+}

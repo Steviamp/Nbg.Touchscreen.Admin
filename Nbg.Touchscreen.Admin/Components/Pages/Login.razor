@@ -1,0 +1,38 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Nav
+
+<PageTitle>Login</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
+    <MudPaper Class="pa-6">
+        <MudText Typo="Typo.h5" GutterBottom>Sign in</MudText>
+
+        <MudForm @ref="_form" OnValidSubmit="HandleLogin">
+            <MudTextField @bind-Value="_email" Label="Email" Required="true" For="@(()=>_email)" />
+            <MudTextField @bind-Value="_password" Label="Password" Required="true" InputType="InputType.Password" />
+            <MudCheckBox T="bool" @bind-Checked="_remember" Label="Remember me" Class="mt-2" />
+            <MudButton Type="Submit" Variant="Variant.Filled" Class="mt-4">Login</MudButton>
+            <MudText Color="Color.Error">@_error</MudText>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm? _form;
+    private string _email = "";
+    private string _password = "";
+    private bool _remember = true;
+    private string? _error;
+
+    private async Task HandleLogin()
+    {
+        var res = await SignInManager.PasswordSignInAsync(_email, _password, _remember, lockoutOnFailure: false);
+        if (res.Succeeded)
+            Nav.NavigateTo("/", true);
+        else
+            _error = "Invalid credentials.";
+    }
+}
+
