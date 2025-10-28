@@ -45,7 +45,6 @@
 
     private async Task CreateUser()
     {
-        // 1) Έλεγχος διπλότυπου email
         var exists = await Db.Users.AnyAsync(u => u.Email == _email);
         if (exists)
         {
@@ -53,7 +52,6 @@
             return;
         }
 
-        // 2) Δημιουργία εγγραφής
         var user = new User
         {
             Name = string.IsNullOrWhiteSpace(_displayName) ? _email : _displayName,
@@ -68,7 +66,6 @@
 
         Snackbar.Add($"User '{_email}' created as '{_role}'.", Severity.Success);
 
-        // 3) Καθάρισε τη φόρμα (δεν κλείνουμε, μόνο με Χ όπως ζήτησες)
         _email = _displayName = _password = string.Empty;
         _role = "Viewer";
         _error = null;
