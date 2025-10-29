@@ -1,61 +1,60 @@
-﻿@rendermode InteractiveServer
-@page "/login"
-@using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Authentication.Cookies
-@using System.Security.Claims
-@inject Nbg.Touchscreen.Admin.Data.AppDbContext Db
+﻿@page "/login"
+@rendermode InteractiveServer
+@inject HttpClient Http
 @inject NavigationManager Nav
-@inject IHttpContextAccessor Http
-
-<PageTitle>Login</PageTitle>
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
 
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
     <MudPaper Class="pa-6">
         <MudText Typo="Typo.h5" GutterBottom>Sign in</MudText>
 
-        <MudForm @ref="_form" OnValidSubmit="HandleLogin">
-            <MudTextField @bind-Value="_email" Label="Email" Required="true" />
-            <MudTextField @bind-Value="_password" Label="Password" Required="true" InputType="InputType.Password" />
-            <MudButton Type="Submit" Variant="Variant.Filled" Class="mt-4">Login</MudButton>
-            <MudText Color="Color.Error">@_error</MudText>
-        </MudForm>
+        <MudTextField @bind-Value="_email" Label="Email" Required="true" />
+        <MudTextField @bind-Value="_password" Label="Password" Required="true" InputType="InputType.Password" />
+
+        <MudButton Class="mt-4" Variant="Variant.Filled" Disabled="@isBusy" OnClick="HandleLogin">LOGIN</MudButton>
+        <MudText Color="Color.Error">@_error</MudText>
     </MudPaper>
 </MudContainer>
 
 @code {
-    private MudForm? _form;
     private string _email = "";
     private string _password = "";
     private string? _error;
+    private bool isBusy;
+
+
+    protected override void OnInitialized()
+    {
+        if (Http.BaseAddress is null)
+            Http.BaseAddress = new Uri(Nav.BaseUri);
+    }
 
     private async Task HandleLogin()
     {
-        Console.WriteLine("DEBUG: HandleLogin START");
-        System.Diagnostics.Debugger.Break();
-        var user = await Db.Users
-          .FirstOrDefaultAsync(u => u.Email == _email && u.PasswordPlain == _password && u.IsActive);
-
-        if (user is null)
+        try
         {
-            _error = "Invalid credentials.";
-            return;
+            isBusy = true; StateHasChanged();
+
+            var resp = await Http.PostAsJsonAsync("/auth/login", new { Email = _email, Password = _password });
+
+            if (resp.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Signed in.", Severity.Success);
+                Nav.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+                _error = "Invalid credentials.";
+            }
         }
-
-        var claims = new List<Claim>
-    {
-      new Claim(ClaimTypes.Name, string.IsNullOrWhiteSpace(user.Name) ? user.Email : user.Name),
-      new Claim(ClaimTypes.Email, user.Email),
-      new Claim(ClaimTypes.Role, user.Role ?? "Viewer")
-    };
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-
-        await Http.HttpContext!.SignInAsync(
-          CookieAuthenticationDefaults.AuthenticationScheme,
-          principal);
-
-        Nav.NavigateTo("/", true);
+        catch (Exception ex)
+        {
+            _error = "Login error: " + ex.Message;
+        }
+        finally
+        {
+            isBusy = false; StateHasChanged();
+        }
     }
 }

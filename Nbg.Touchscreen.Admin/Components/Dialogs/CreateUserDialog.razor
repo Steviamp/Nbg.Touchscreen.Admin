@@ -6,58 +6,126 @@
 
 <MudDialog>
     <DialogContent>
-        <MudForm @ref="_form" OnValidSubmit="CreateUser">
-            <MudTextField @bind-Value="_email" Label="Email" Required="true" />
-            <MudTextField @bind-Value="_displayName" Label="Display name" />
-            <MudTextField @bind-Value="_password" Label="Password" InputType="InputType.Password" Required="true" />
-            <MudText Color="Color.Error">@_error</MudText>
-            <MudButton Type="Submit" Class="mt-4">Create</MudButton>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_email"
+                          Label="Email"
+                          Required="true"
+                          Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_displayName"
+                          Label="Display name"
+                          Variant="Variant.Outlined"
+                          Class="mt-3" />
+            <MudTextField @bind-Value="_password"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Class="mt-3" />
+            @if (!string.IsNullOrEmpty(_error))
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+            }
+            @if (!string.IsNullOrEmpty(_success))
+            {
+                <MudAlert Severity="Severity.Success" Class="mt-3">@_success</MudAlert>
+            }
         </MudForm>
     </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="CreateUser"
+                   Disabled="@_isCreating">
+            @if (_isCreating)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Create
+        </MudButton>
+    </DialogActions>
 </MudDialog>
 
 @code {
-    [Inject] public AppDbContext Db { get; set; } = default!;
-    [Inject] public ISnackbar Snackbar { get; set; } = default!;
+    [CascadingParameter]
+    public IMudDialogInstance? DialogInstance { get; set; }
+
+    [Inject]
+    public AppDbContext Db { get; set; } = default!;
+
+    [Inject]
+    public ISnackbar Snackbar { get; set; } = default!;
 
     private MudForm? _form;
+    private bool _isCreating;
     private string _email = "";
     private string _displayName = "";
     private string _password = "";
-    private string _role = "Viewer";   // default
+    private string _role = "Viewer";
     private string? _error;
+    private string? _success;
 
     private async Task CreateUser()
     {
-        Console.WriteLine("DEBUG: CreateUser START");
-        System.Diagnostics.Debugger.Break();
-
-        var exists = await Db.Users.AnyAsync(u => u.Email == _email);
-        if (exists)
+        try
         {
-            _error = "Email already exists.";
-            return;
+            _isCreating = true;
+            _error = null;
+            _success = null;
+            StateHasChanged();
+
+            // Basic validation
+            if (string.IsNullOrWhiteSpace(_email))
+            {
+                _error = "Email is required.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_password))
+            {
+                _error = "Password is required.";
+                return;
+            }
+
+            // Check if email already exists
+            var exists = await Db.Users.AnyAsync(u => u.Email == _email);
+            if (exists)
+            {
+                _error = "Email already exists.";
+                return;
+            }
+
+            // Create user
+            var user = new User
+            {
+                Name = string.IsNullOrWhiteSpace(_displayName) ? _email : _displayName,
+                Email = _email,
+                PasswordPlain = _password,
+                Role = _role,
+                IsActive = true
+            };
+
+            Db.Users.Add(user);
+            await Db.SaveChangesAsync();
+
+            _success = $"User '{_email}' created successfully!";
+            Snackbar.Add(_success, Severity.Success);
+
+            // Wait a bit to show success message, then close
+            await Task.Delay(1000);
+
+            // Close dialog
+            DialogInstance?.Close(DialogResult.Ok(true));
         }
-
-        var user = new User
+        catch (Exception ex)
         {
-            Name = string.IsNullOrWhiteSpace(_displayName) ? _email : _displayName,
-            Email = _email,
-            PasswordPlain = _password, // για αρχή απλό — μετά το κάνουμε hash
-            Role = _role,
-            IsActive = true
-        };
-
-        Db.Users.Add(user);
-        await Db.SaveChangesAsync();
-
-        Snackbar.Add($"User '{_email}' created as '{_role}'.", Severity.Success);
-
-        _email = _displayName = _password = string.Empty;
-        _role = "Viewer";
-        _error = null;
-        if (_form is not null)
-            await _form.ResetAsync();
+            _error = $"Error creating user: {ex.Message}";
+            Snackbar.Add(_error, Severity.Error);
+        }
+        finally
+        {
+            _isCreating = false;
+            StateHasChanged();
+        }
     }
 }
-

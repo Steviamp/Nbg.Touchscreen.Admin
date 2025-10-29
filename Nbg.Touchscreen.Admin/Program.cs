@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Nbg.Touchscreen.Admin.Components;
 using Nbg.Touchscreen.Admin.Data;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +30,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 builder.Services.AddAuthorization();               
-builder.Services.AddHttpContextAccessor();         
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
@@ -38,16 +42,32 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+
+app.MapPost("/auth/login", async (LoginDto dto, AppDbContext db, HttpContext http) =>
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
+    var user = await db.Users
+        .FirstOrDefaultAsync(u => u.Email == dto.Email && u.PasswordPlain == dto.Password && u.IsActive);
 
-app.UseHttpsRedirection();
+    if (user is null) return Results.Unauthorized();
 
+    var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, string.IsNullOrWhiteSpace(user.Name) ? user.Email : user.Name),
+        new Claim(ClaimTypes.Email, user.Email),
+        new Claim(ClaimTypes.Role, user.Role ?? "Viewer")
+    };
+
+    var id = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    await http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
+
+    return Results.Ok();
+});
+
+app.MapPost("/auth/logout", async (HttpContext http) =>
+{
+    await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Ok();
+});
 
 app.UseAntiforgery();
 
@@ -56,3 +76,20 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+record LoginDto(string Email, string Password);
+// Configure the HTTP request pipeline.
+//if (!app.Environment.IsDevelopment())
+//{
+//    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+//    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+//    app.UseHsts();
+//}
+
+//app.UseAntiforgery();
+
+//app.MapStaticAssets();
+//app.MapRazorComponents<App>()
+//    .AddInteractiveServerRenderMode();
+
+//app.Run();
