@@ -10,7 +10,12 @@
     <MudAppBar Color="Color.Primary" Elevation="4">
         <MudText Typo="Typo.h6">NBG Touchscreen Admin</MudText>
         <MudSpacer />
-        <MudButton Variant="Variant.Outlined" OnClick="OpenCreateUser">Create user</MudButton>
+        <AuthorizeView>
+            <Authorized>
+                <MudButton Color="Color.Inherit" Variant="Variant.Outlined" OnClick="OpenCreateUser">Create user</MudButton>
+                <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Href="/auth/logout" Class="ml-2">Logout</MudButton>
+            </Authorized>
+        </AuthorizeView>
     </MudAppBar>
 
     <MudMainContent>

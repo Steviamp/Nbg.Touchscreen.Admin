@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Nbg.Touchscreen.Admin.Components;
@@ -29,7 +30,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         o.SlidingExpiration = true;
     });
 
-builder.Services.AddAuthorization();               
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
@@ -42,8 +44,13 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseAntiforgery();
 
-app.MapPost("/auth/login", async (LoginDto dto, AppDbContext db, HttpContext http) =>
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
+app.MapPost("/auth/login", async ([FromForm] LoginDto dto, AppDbContext db, HttpContext http) =>
 {
     var user = await db.Users
         .FirstOrDefaultAsync(u => u.Email == dto.Email && u.PasswordPlain == dto.Password && u.IsActive);
@@ -60,36 +67,17 @@ app.MapPost("/auth/login", async (LoginDto dto, AppDbContext db, HttpContext htt
     var id = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
     await http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(id));
 
-    return Results.Ok();
+    var returnUrl = string.IsNullOrWhiteSpace(dto.ReturnUrl) ? "/" : dto.ReturnUrl!;
+    return Results.Redirect(returnUrl);
 });
 
-app.MapPost("/auth/logout", async (HttpContext http) =>
+app.MapGet("/auth/logout", async (HttpContext http) =>
 {
     await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    return Results.Ok();
-});
-
-app.UseAntiforgery();
-
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    return Results.Redirect("/login");   // browser redirect
+})
+.DisableAntiforgery();
 
 app.Run();
 
-record LoginDto(string Email, string Password);
-// Configure the HTTP request pipeline.
-//if (!app.Environment.IsDevelopment())
-//{
-//    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-//    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-//    app.UseHsts();
-//}
-
-//app.UseAntiforgery();
-
-//app.MapStaticAssets();
-//app.MapRazorComponents<App>()
-//    .AddInteractiveServerRenderMode();
-
-//app.Run();
+public record LoginDto(string Email, string Password, string? ReturnUrl);
