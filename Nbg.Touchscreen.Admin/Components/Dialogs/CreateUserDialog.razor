@@ -1,4 +1,5 @@
-﻿@using MudBlazor
+﻿@rendermode InteractiveServer
+@using MudBlazor
 @using Microsoft.AspNetCore.Components
 @using Microsoft.EntityFrameworkCore
 @using Nbg.Touchscreen.Admin.Data
@@ -9,23 +10,6 @@
             <MudTextField @bind-Value="_email" Label="Email" Required="true" />
             <MudTextField @bind-Value="_displayName" Label="Display name" />
             <MudTextField @bind-Value="_password" Label="Password" InputType="InputType.Password" Required="true" />
-
-            <!-- Αν είσαι Admin δείξε επιλογή ρόλου, αλλιώς φτιάχνεις Viewer -->
-            @* <AuthorizeView Roles="AdminUser">
-                <Authorized>
-                    <MudSelect T="string" Label="Role" @bind-Value="_role" Required="true">
-                        <MudSelectItem Value="AdminUser">Admin</MudSelectItem>
-                        <MudSelectItem Value="Editor">Editor</MudSelectItem>
-                        <MudSelectItem Value="Viewer">Viewer</MudSelectItem>
-                    </MudSelect>
-                </Authorized>
-                <NotAuthorized>
-                    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
-                        New users are created as <b>Viewer</b>.
-                    </MudAlert>
-                </NotAuthorized>
-            </AuthorizeView> *@
-
             <MudText Color="Color.Error">@_error</MudText>
             <MudButton Type="Submit" Class="mt-4">Create</MudButton>
         </MudForm>
@@ -45,6 +29,9 @@
 
     private async Task CreateUser()
     {
+        Console.WriteLine("DEBUG: CreateUser START");
+        System.Diagnostics.Debugger.Break();
+
         var exists = await Db.Users.AnyAsync(u => u.Email == _email);
         if (exists)
         {
@@ -56,7 +43,7 @@
         {
             Name = string.IsNullOrWhiteSpace(_displayName) ? _email : _displayName,
             Email = _email,
-            Password = _password, // για αρχή απλό — μετά το κάνουμε hash
+            PasswordPlain = _password, // για αρχή απλό — μετά το κάνουμε hash
             Role = _role,
             IsActive = true
         };

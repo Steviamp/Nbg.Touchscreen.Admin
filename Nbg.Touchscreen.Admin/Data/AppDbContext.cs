@@ -18,7 +18,7 @@ namespace Nbg.Touchscreen.Admin.Data
                 e.HasIndex(x => x.Email).IsUnique();
                 e.Property(x => x.Name).HasMaxLength(100).IsRequired();
                 e.Property(x => x.Email).HasMaxLength(256).IsRequired();
-                e.Property(x => x.Password).HasMaxLength(200).IsRequired();
+                e.Property(x => x.PasswordPlain).HasMaxLength(200).IsRequired();
                 e.Property(x => x.Role).HasMaxLength(20).IsRequired();
             });
         }

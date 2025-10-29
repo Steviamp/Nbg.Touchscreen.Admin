@@ -13,7 +13,7 @@ namespace Nbg.Touchscreen.Admin.Data
         public string Email { get; set; } = default!;
 
         [Required, MaxLength(200)]
-        public string Password { get; set; } = default!; // απλό για αρχή (μπορούμε να βάλουμε hash μετά)
+        public string PasswordPlain { get; set; } = default!; 
 
         [Required, MaxLength(20)]
         public string Role { get; set; } = "Viewer";

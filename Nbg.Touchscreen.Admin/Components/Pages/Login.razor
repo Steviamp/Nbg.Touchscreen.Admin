@@ -31,8 +31,10 @@
 
     private async Task HandleLogin()
     {
+        Console.WriteLine("DEBUG: HandleLogin START");
+        System.Diagnostics.Debugger.Break();
         var user = await Db.Users
-          .FirstOrDefaultAsync(u => u.Email == _email && u.Password == _password && u.IsActive);
+          .FirstOrDefaultAsync(u => u.Email == _email && u.PasswordPlain == _password && u.IsActive);
 
         if (user is null)
         {
