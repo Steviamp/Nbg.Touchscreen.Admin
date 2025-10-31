@@ -4,15 +4,28 @@
 
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
     <MudPaper Class="pa-6">
+        <div style="text-align:center; margin-bottom: 20px;">
+            <MudImage Src="images/MellonLogo.png"
+                      Alt="Company Logo"
+                      Style="max-width: 160px;" />
+        </div>
         <MudText Typo="Typo.h5" GutterBottom>Sign in</MudText>
 
         <form method="post" action="/auth/login">
             <AntiforgeryToken />
             <input type="hidden" name="ReturnUrl" value="@returnUrl" />
 
-            <MudTextField @bind-Value="_email" Label="Email" Name="Email" Required="true" />
-            <MudTextField @bind-Value="_password" Label="Password" Name="Password" Required="true"
-                          InputType="InputType.Password" />
+            <MudTextField 
+                @bind-Value="_email" 
+                Label="Email" 
+                Name="Email" 
+                Required="true" />
+            <MudTextField 
+                @bind-Value="_password" 
+                Label="Password" 
+                Name="Password" 
+                Required="true"
+                InputType="InputType.Password" />
 
             <MudButton Class="mt-4" Variant="Variant.Filled" ButtonType="ButtonType.Submit">
                 LOGIN

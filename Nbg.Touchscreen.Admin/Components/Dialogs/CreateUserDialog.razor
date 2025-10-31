@@ -1,10 +1,13 @@
 ﻿@attribute [Authorize]
 @rendermode InteractiveServer
+@inject IPasswordHasher<User> PasswordHasher
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @using MudBlazor
 @using Microsoft.AspNetCore.Components
 @using Microsoft.EntityFrameworkCore
 @using Nbg.Touchscreen.Admin.Data
+@using Nbg.Touchscreen.Admin.Shared
 
 <MudDialog>
     <DialogContent>
@@ -21,6 +24,12 @@
                           Label="Password"
                           InputType="InputType.Password"
                           Required="true"
+                          Variant="Variant.Outlined"
+                          Class="mt-3" />
+            <MudTextField @bind-Value="_passwordConfirm" 
+                          Label="Confirm password" 
+                          InputType="InputType.Password" 
+                          Required="true" 
                           Variant="Variant.Outlined"
                           Class="mt-3" />
             @if (!string.IsNullOrEmpty(_error))
@@ -63,6 +72,7 @@
     private string _email = "";
     private string _displayName = "";
     private string _password = "";
+    private string _passwordConfirm = "";
     private string _role = "Viewer";
     private string? _error;
     private string? _success;
@@ -89,6 +99,27 @@
                 return;
             }
 
+            // --- Validation ---
+            _email = _email?.Trim() ?? "";
+
+            if (!ValidationHelpers.IsValidEmail(_email))
+            {
+                _error = "Invalid email format.";
+                return;
+            }
+
+            if (!ValidationHelpers.IsValidPassword(_password))
+            {
+                _error = "Password must be at least 10 chars, include an uppercase letter and a number.";
+                return;
+            }
+
+            if (_password != _passwordConfirm)
+            {
+                _error = "Passwords do not match.";
+                return;
+            }
+
             // Check if email already exists
             var exists = await Db.Users.AnyAsync(u => u.Email == _email);
             if (exists)
@@ -102,16 +133,20 @@
             {
                 Name = string.IsNullOrWhiteSpace(_displayName) ? _email : _displayName,
                 Email = _email,
-                PasswordPlain = _password,
-                Role = _role,
+                Role = "Viewer",
                 IsActive = true
             };
+
+            user.Password = PasswordHasher.HashPassword(user, _password);
 
             Db.Users.Add(user);
             await Db.SaveChangesAsync();
 
             _success = $"User '{_email}' created successfully!";
             Snackbar.Add(_success, Severity.Success);
+
+            // reset form
+            _email = _displayName = _password = _passwordConfirm = "";
 
             // Wait a bit to show success message, then close
             await Task.Delay(1000);
