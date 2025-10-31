@@ -1,6 +1,9 @@
 ﻿@page "/login"
 @rendermode InteractiveServer
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Shared
 
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
     <MudPaper Class="pa-6">
@@ -11,44 +14,108 @@
         </div>
         <MudText Typo="Typo.h5" GutterBottom>Sign in</MudText>
 
-        <form method="post" action="/auth/login">
+        <form id="loginForm" method="post" action="/auth/login">
             <AntiforgeryToken />
             <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+            <input type="hidden" name="Email" value="@_email" />
+            <input type="hidden" name="Password" value="@_password" />
+            
+            <MudForm @ref="_form">
+                <MudTextField 
+                    @bind-Value="_email" 
+                    Label="Email" 
+                    Name="Email" 
+                    Required="true"
+                              Immediate="true"
+                              Error="@_emailError"
+                              ErrorText="@_emailErrorText" />
+                <MudTextField 
+                    @bind-Value="_password" 
+                    Label="Password" 
+                    Name="Password" 
+                    Required="true"
+                    InputType="InputType.Password"
+                    Immediate="true"
+                    Class="mt-3"
+                    Error="@_passwordError"
+                    ErrorText="@_passwordErrorText" />
 
-            <MudTextField 
-                @bind-Value="_email" 
-                Label="Email" 
-                Name="Email" 
-                Required="true" />
-            <MudTextField 
-                @bind-Value="_password" 
-                Label="Password" 
-                Name="Password" 
-                Required="true"
-                InputType="InputType.Password" />
-
-            <MudButton Class="mt-4" Variant="Variant.Filled" ButtonType="ButtonType.Submit">
-                LOGIN
-            </MudButton>
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+                }
+                <MudButton Class="mt-4" Variant="Variant.Filled" Disabled="@_submitting"
+                           OnClick="ValidateAndSubmit">
+                    @if (_submitting)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    }
+                    LOGIN
+                </MudButton>
+            </MudForm>
         </form>
-
-        @if (!string.IsNullOrEmpty(_error))
-        {
-            <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
-        }
     </MudPaper>
 </MudContainer>
 
 @code {
+    private MudForm? _form;
+    private bool _submitting;
     private string _email = "";
     private string _password = "";
     private string? _error;
     private string returnUrl = "/";
+    private bool _emailError;
+    private bool _passwordError;
+    private string? _emailErrorText;
+    private string? _passwordErrorText;
 
     protected override void OnInitialized()
     {
         var uri = new Uri(Nav.Uri);
         var qs = System.Web.HttpUtility.ParseQueryString(uri.Query);
         returnUrl = string.IsNullOrWhiteSpace(qs["ReturnUrl"]) ? "/" : qs["ReturnUrl"]!;
+
+        var err = qs["error"];
+        if (err == "invalid") _error = "Invalid email or password.";
+    }
+
+    private async Task ValidateAndSubmit()
+    {
+        _error = null;
+        _emailError = _passwordError = false;
+        _emailErrorText = _passwordErrorText = null;
+
+        // Email validation
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _emailError = true;
+            _emailErrorText = "Email is required.";
+        }
+        else if (!ValidationHelpers.IsValidEmail(_email))
+        {
+            _emailError = true;
+            _emailErrorText = "Invalid email format.";
+        }
+
+        // Password required
+        if (string.IsNullOrWhiteSpace(_password))
+        {
+            _passwordError = true;
+            _passwordErrorText = "Password is required.";
+        }
+
+        if (_emailError || _passwordError)
+            return;
+
+        // All good: submit the real form (keeps antiforgery + ReturnUrl)
+        _submitting = true;
+        try
+        {
+            await JS.InvokeVoidAsync("submitLoginForm");
+        }
+        finally
+        {
+            _submitting = false;
+        }
     }
 }

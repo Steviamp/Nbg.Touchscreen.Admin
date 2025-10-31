@@ -56,7 +56,7 @@ app.MapPost("/auth/login", async ([FromForm] LoginDto dto, AppDbContext db,
                                   HttpContext http, IPasswordHasher<User> hasher) =>
 {
     var user = await db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email && u.IsActive);
-    if (user is null) return Results.Unauthorized();
+    if (user is null) return Results.Redirect("/login?error=invalid");
 
     // 1) Δοκίμασε κανονικό verify σε hashed password
     var vr = PasswordVerificationResult.Failed;
@@ -70,7 +70,7 @@ app.MapPost("/auth/login", async ([FromForm] LoginDto dto, AppDbContext db,
         vr = PasswordVerificationResult.Success;
     }
 
-    if (vr == PasswordVerificationResult.Failed) return Results.Unauthorized(); ;
+    if (vr == PasswordVerificationResult.Failed) return Results.Redirect("/login?error=invalid");
 
     // 3) Claims + Cookie sign-in
     var claims = new List<Claim>
