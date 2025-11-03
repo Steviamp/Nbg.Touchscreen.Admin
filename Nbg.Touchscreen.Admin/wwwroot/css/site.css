@@ -1,0 +1,76 @@
+﻿/* Card root styling */
+.card-root {
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    height: 220px; /* σταθερό ύψος που φαίνεται ωραίο σε grid */
+}
+
+/* Button covers whole card so clicking anywhere navigates */
+.card-button {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    color: inherit;
+}
+
+/* Top area with icon */
+.card-top {
+    background-color: #2f6df6; /* primary-ish color — προσαρμόζεις */
+    color: white;
+    padding: 18px;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Body text area */
+.card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* small muted subtitle */
+.muted {
+    color: rgba(0,0,0,0.6);
+}
+
+/* CTA area */
+.card-cta {
+    padding: 10px 16px 16px 16px;
+    display: flex;
+    justify-content: center;
+}
+
+/* hover/focus */
+.card-root:hover,
+.card-root:focus-within {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 24px rgba(47,109,246,0.12);
+    transition: all 180ms ease;
+}
+
+/* Mobile tweak: make cards taller on very small screens */
+@media (max-width: 600px) {
+    .card-root {
+        height: 260px;
+    }
+
+    .card-top {
+        padding: 24px;
+    }
+}

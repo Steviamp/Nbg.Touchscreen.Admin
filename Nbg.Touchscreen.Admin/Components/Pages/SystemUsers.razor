@@ -1,0 +1,121 @@
+﻿@page "/system-users"
+@rendermode InteractiveServer
+@using MudBlazor
+@using Microsoft.EntityFrameworkCore
+@using Nbg.Touchscreen.Admin.Data
+@using Nbg.Touchscreen.Admin.Components.Dialogs
+
+@inject AppDbContext Db
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.False"
+              Class="mt-6">
+
+    <!-- Header / Toolbar -->
+    <MudPaper Class="pa-0 mt-4">
+        <MudTable T="User" Items="_users" Filter="TableFilter" Hover="true" Dense="true" Bordered="false" Striped="true">
+            <ToolBarContent>
+                <MudText Typo="Typo.subtitle2">@($"{_users.Count} users")</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Outlined" OnClick="ReloadAsync">
+                    <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="mr-1" /> Reload
+                </MudButton>
+                <AuthorizeView>
+                    <Authorized>
+                        <MudButton Color="Color.Inherit" Variant="Variant.Outlined" OnClick="OpenCreateUser" Class="ml-2">Create user</MudButton>
+                    </Authorized>
+                </AuthorizeView>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Role</MudTh>
+                <MudTh>CreatedAt</MudTh>
+                <MudTh>Is Active</MudTh>
+            </HeaderContent>
+
+            <RowTemplate Context="context">
+                <MudTd DataLabel="Name">
+                    <div class="d-flex flex-column">
+                        <span>@context.Name</span>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@context.Email</MudText>
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Role">@context.Role</MudTd>
+
+                <MudTd DataLabel="CreatedAt">
+                    @context.CreatedAtUtc.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
+                </MudTd>
+
+                <MudTd DataLabel="Is Active">
+                    <MudChip T="string"
+                             Color="@(context.IsActive ? Color.Success : Color.Error)"
+                             Variant="Variant.Outlined" Dense="true">
+                        @(context.IsActive ? "Yes" : "No")
+                    </MudChip>
+                </MudTd>
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText Class="pa-4">No users found.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+
+</MudContainer>
+
+@code {
+    private List<User> _users = new();
+    private string _search = "";
+    [Inject] IDialogService DialogService { get; set; } = default!;
+    
+
+    protected override async Task OnInitializedAsync()
+        => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        // απλή φόρτωση (μπορούμε να κάνουμε paging/sorting αργότερα)
+        _users = await Db.Users
+            .OrderByDescending(u => u.CreatedAtUtc)
+            .ToListAsync();
+        StateHasChanged();
+    }
+
+    private bool TableFilter(User u)
+    {
+        if (string.IsNullOrWhiteSpace(_search)) return true;
+        var s = _search.Trim().ToLowerInvariant();
+        return (u.Name ?? "").ToLowerInvariant().Contains(s)
+            || (u.Email ?? "").ToLowerInvariant().Contains(s)
+            || (u.Role ?? "").ToLowerInvariant().Contains(s);
+    }
+
+    private async Task ReloadAsync()
+    {
+        await LoadAsync();
+        Snackbar.Add("Users reloaded.", Severity.Info);
+    }
+
+    private async Task OpenCreateUser()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        var dialogRef = await Dialogs.ShowAsync<CreateUserDialog>("Create user", options: options);
+        var result = await dialogRef.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadAsync();
+            Snackbar.Add("User created.", Severity.Success);
+        }
+    }
+
+    private async Task OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await ReloadAsync();
+    }
+}
+

@@ -1,9 +1,49 @@
 ﻿@attribute [Authorize]
 @page "/"
 @using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@inject NavigationManager Nav
 
-<PageTitle>Home</PageTitle>
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-6">
+    <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6">Welcome to Mellon Queueing System</MudText>
 
-<h1>Hello, world!</h1>
+    <MudGrid Gutter="3">
+        @foreach (var card in Cards)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudPaper Elevation="2" Class="card-root" Style="height:100%;">
+                    <button class="card-button" @onclick="() => NavigateTo(card.Route)" aria-label="@card.Title">
+                        <div class="card-top">
+                            <MudIcon Icon="@card.Icon" Size="Size.Large" />
+                        </div>
+                        <div class="card-body">
+                            <MudText Typo="Typo.h6">@card.Title</MudText>
+                            <MudText Typo="Typo.subtitle2" Class="muted">@card.Subtitle</MudText>
+                        </div>
+                        <div class="card-cta">
+                            <MudButton Variant="Variant.Filled" Size="Size.Small">View More</MudButton>
+                        </div>
+                    </button>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
 
-Welcome to your new app.
+@code {
+    record CardModel(string Title, string Subtitle, string Route, string Icon);
+
+    private readonly CardModel[] Cards = new[]
+    {
+        new CardModel("System Users", "Manage app users", "/system-users", Icons.Material.Filled.Group),
+        new CardModel("NemoQ Users", "Manage NemoQ connections", "/nemoq-users", Icons.Material.Filled.ListAlt),
+        new CardModel("TouchScreen", "Touchscreen config & preview", "/touchscreen", Icons.Material.Filled.TouchApp),
+        new CardModel("Statistics", "Reports & analytics", "/statistics", Icons.Material.Filled.BarChart)
+    };
+
+    void NavigateTo(string route)
+    {
+        Nav.NavigateTo(route);
+    }
+}
+

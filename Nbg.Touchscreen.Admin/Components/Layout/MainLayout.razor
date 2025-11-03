@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Components.Dialogs
+@inject NavigationManager Nav
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -9,11 +10,14 @@
 <MudLayout>
     <MudAppBar Color="Color.Primary" Elevation="4">
         <MudImage Src="images/MellonTech.png" Alt="Company Logo" Style="max-width: 100px;" />
-        <MudText Typo="Typo.h6" Class="ml-2">Mellon Queueing System</MudText>
+        <MudText Typo="Typo.h6" Class="ml-2" Style="position:absolute; left:50%; transform:translateX(-50%);">Mellon Queueing System</MudText>
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
-                <MudButton Color="Color.Inherit" Variant="Variant.Outlined" OnClick="OpenCreateUser">Create user</MudButton>
+                @if (!IsHomePage)
+        {
+                <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Href="/" Class="ml-2">Back</MudButton>
+        }
                 <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Href="/auth/logout" Class="ml-2">Logout</MudButton>
             </Authorized>
         </AuthorizeView>
@@ -25,6 +29,5 @@
 </MudLayout>
 
 @code {
-    [Inject] IDialogService DialogService { get; set; } = default!;
-    private void OpenCreateUser() => DialogService.Show<CreateUserDialog>("Create user");
+    private bool IsHomePage => Nav.Uri.EndsWith("/");
 }
