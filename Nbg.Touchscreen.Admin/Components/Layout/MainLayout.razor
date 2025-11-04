@@ -1,6 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Components.Dialogs
+@using Microsoft.AspNetCore.Components.Routing
 @inject NavigationManager Nav
 
 <MudThemeProvider />
@@ -10,14 +12,21 @@
 <MudLayout>
     <MudAppBar Color="Color.Primary" Elevation="4">
         <MudImage Src="images/MellonTech.png" Alt="Company Logo" Style="max-width: 100px;" />
-        <MudText Typo="Typo.h6" Class="ml-2" Style="position:absolute; left:50%; transform:translateX(-50%);">Mellon Queueing System</MudText>
+
+        <!-- Dynamic title centered -->
+        <MudText Typo="Typo.h6"
+                 Class="ml-2"
+                 Style="position:absolute; left:50%; transform:translateX(-50%);">
+            @PageTitle
+        </MudText>
+
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
                 @if (!IsHomePage)
-        {
-                <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Href="/" Class="ml-2">Back</MudButton>
-        }
+                {
+                    <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Href="/" Class="ml-2">Back</MudButton>
+                }
                 <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Href="/auth/logout" Class="ml-2">Logout</MudButton>
             </Authorized>
         </AuthorizeView>
@@ -29,5 +38,38 @@
 </MudLayout>
 
 @code {
+    private string PageTitle = "Mellon Queueing System";
     private bool IsHomePage => Nav.Uri.EndsWith("/");
+
+    // routes -> titles (πρόσθεσε/άλλαξε ελεύθερα)
+    private readonly (string Match, string Title)[] _map =
+    [
+        ("/system-users", "System Users"),
+        ("/nemoq-users",  "NemoQ Users"),
+        ("/touchscreen",  "TouchScreen"),
+        ("/statistics",   "Statistics"),
+    ];
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        UpdateTitle();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+        => UpdateTitle();
+
+    private void UpdateTitle()
+    {
+        var uri = Nav.Uri.ToLowerInvariant();
+
+        // βρες το πρώτο match από τον χάρτη
+        var hit = _map.FirstOrDefault(x => uri.Contains(x.Match));
+        PageTitle = string.IsNullOrEmpty(hit.Title) ? "Mellon Queueing System" : hit.Title;
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+        => Nav.LocationChanged -= OnLocationChanged;
 }

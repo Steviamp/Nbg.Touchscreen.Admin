@@ -32,6 +32,10 @@
                           Required="true" 
                           Variant="Variant.Outlined"
                           Class="mt-3" />
+            <MudRadioGroup @bind-Value="_role" Class="mt-3">
+                <MudRadio Value="@("Admin")" Color="Color.Primary">Admin</MudRadio>
+                <MudRadio Value="@("Viewer")" Color="Color.Primary">Viewer</MudRadio>
+            </MudRadioGroup>
             @if (!string.IsNullOrEmpty(_error))
             {
                 <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
@@ -76,7 +80,7 @@
     private string _role = "Viewer";
     private string? _error;
     private string? _success;
-
+   
     private async Task CreateUser()
     {
         try
@@ -84,7 +88,6 @@
             _isCreating = true;
             _error = null;
             _success = null;
-            StateHasChanged();
 
             // Basic validation
             if (string.IsNullOrWhiteSpace(_email))
@@ -132,8 +135,8 @@
             var user = new User
             {
                 Name = string.IsNullOrWhiteSpace(_displayName) ? _email : _displayName,
-                Email = _email,
-                Role = "Viewer",
+                Email = _email.ToLowerInvariant(),
+                Role = _role,
                 IsActive = true
             };
 
@@ -148,9 +151,6 @@
             // reset form
             _email = _displayName = _password = _passwordConfirm = "";
 
-            // Wait a bit to show success message, then close
-            await Task.Delay(1000);
-
             // Close dialog
             DialogInstance?.Close(DialogResult.Ok(true));
         }
@@ -162,7 +162,6 @@
         finally
         {
             _isCreating = false;
-            StateHasChanged();
         }
     }
 }

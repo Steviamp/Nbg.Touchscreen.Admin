@@ -14,16 +14,29 @@
 
     <!-- Header / Toolbar -->
     <MudPaper Class="pa-0 mt-4">
-        <MudTable T="User" Items="_users" Filter="TableFilter" Hover="true" Dense="true" Bordered="false" Striped="true">
+        <MudTable T="User"
+                  @ref="_users"
+                  ServerData="LoadServerData"
+                  RowsPerPage="10"
+                  Hover="true" 
+                  Dense="true" 
+                  Bordered="false" 
+                  Striped="true">
+
             <ToolBarContent>
-                <MudText Typo="Typo.subtitle2">@($"{_users.Count} users")</MudText>
+                <MudText Typo="Typo.subtitle2">@($"{_totalItems} users")</MudText>
                 <MudSpacer />
-                <MudButton Variant="Variant.Outlined" OnClick="ReloadAsync">
+                <MudButton Variant="Variant.Outlined" OnClick="_users!.ReloadServerData">
                     <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="mr-1" /> Reload
                 </MudButton>
                 <AuthorizeView>
                     <Authorized>
-                        <MudButton Color="Color.Inherit" Variant="Variant.Outlined" OnClick="OpenCreateUser" Class="ml-2">Create user</MudButton>
+                        <MudButton 
+                            Color="Color.Inherit" 
+                            Variant="Variant.Outlined" 
+                            OnClick="OpenCreateUser" 
+                            Class="ml-2">Create user
+                        </MudButton>
                     </Authorized>
                 </AuthorizeView>
             </ToolBarContent>
@@ -31,8 +44,7 @@
             <HeaderContent>
                 <MudTh>Name</MudTh>
                 <MudTh>Role</MudTh>
-                <MudTh>CreatedAt</MudTh>
-                <MudTh>Is Active</MudTh>
+                <MudTh>Created At</MudTh>
             </HeaderContent>
 
             <RowTemplate Context="context">
@@ -47,13 +59,11 @@
                 <MudTd DataLabel="CreatedAt">
                     @context.CreatedAtUtc.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
                 </MudTd>
-
-                <MudTd DataLabel="Is Active">
-                    <MudChip T="string"
-                             Color="@(context.IsActive ? Color.Success : Color.Error)"
-                             Variant="Variant.Outlined" Dense="true">
-                        @(context.IsActive ? "Yes" : "No")
-                    </MudChip>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   OnClick="@(() => DeleteUser(context))" />
                 </MudTd>
             </RowTemplate>
 
@@ -66,36 +76,35 @@
 </MudContainer>
 
 @code {
-    private List<User> _users = new();
+    private MudTable<User> _users = new();
     private string _search = "";
-    [Inject] IDialogService DialogService { get; set; } = default!;
-    
+    private int _totalItems;
 
-    protected override async Task OnInitializedAsync()
-        => await LoadAsync();
+    protected override Task OnInitializedAsync() => Task.CompletedTask;
 
-    private async Task LoadAsync()
+    private async Task<TableData<User>> LoadServerData(TableState state, CancellationToken token)
     {
-        // απλή φόρτωση (μπορούμε να κάνουμε paging/sorting αργότερα)
-        _users = await Db.Users
-            .OrderByDescending(u => u.CreatedAtUtc)
+        IQueryable<User> query = Db.Users.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var s = _search.Trim().ToLower();
+            query = query.Where(u =>
+                (u.Name ?? "").ToLower().Contains(s) ||
+                (u.Email ?? "").ToLower().Contains(s) ||
+                (u.Role ?? "").ToLower().Contains(s));
+        }
+
+        _totalItems = await query.CountAsync();
+
+        query = query.OrderByDescending(u => u.CreatedAtUtc);
+
+        var items = await query
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
             .ToListAsync();
-        StateHasChanged();
-    }
 
-    private bool TableFilter(User u)
-    {
-        if (string.IsNullOrWhiteSpace(_search)) return true;
-        var s = _search.Trim().ToLowerInvariant();
-        return (u.Name ?? "").ToLowerInvariant().Contains(s)
-            || (u.Email ?? "").ToLowerInvariant().Contains(s)
-            || (u.Role ?? "").ToLowerInvariant().Contains(s);
-    }
-
-    private async Task ReloadAsync()
-    {
-        await LoadAsync();
-        Snackbar.Add("Users reloaded.", Severity.Info);
+        return new TableData<User> { TotalItems = _totalItems, Items = items };
     }
 
     private async Task OpenCreateUser()
@@ -107,15 +116,53 @@
 
         if (!result.Canceled)
         {
-            await LoadAsync();
+            await _users.ReloadServerData();
             Snackbar.Add("User created.", Severity.Success);
         }
     }
 
+    private async Task DeleteUser(User user)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small
+        };
+
+        var parameters = new DialogParameters
+    {
+        { "ContentText", $"Are you sure you want to delete user '{user.Email}'? This action cannot be undone." },
+        { "ButtonText", "Delete" },
+        { "Color", Color.Error }
+    };
+
+        var dialog = await Dialogs.ShowAsync<ConfirmDialog>("Delete User", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                var userToDelete = await Db.Users.FindAsync(user.Id);
+                if (userToDelete != null)
+                {
+                    Db.Users.Remove(userToDelete);
+                    await Db.SaveChangesAsync();
+
+                    Snackbar.Add($"User '{user.Email}' deleted successfully.", Severity.Success);
+                    await _users.ReloadServerData();
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting user: {ex.Message}", Severity.Error);
+            }
+        }
+    }
     private async Task OnSearchKey(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
-            await ReloadAsync();
+            await _users.ReloadServerData();
     }
 }
 

@@ -11,19 +11,28 @@
         @foreach (var card in Cards)
         {
             <MudItem xs="12" sm="6" md="3">
-                <MudPaper Elevation="2" Class="card-root" Style="height:100%;">
-                    <button class="card-button" @onclick="() => NavigateTo(card.Route)" aria-label="@card.Title">
-                        <div class="card-top">
-                            <MudIcon Icon="@card.Icon" Size="Size.Large" />
+                <MudPaper Elevation="2" 
+                          Class="card-root" 
+                          Style="height:100%;"
+                          OnClick="() => NavigateTo(card.Route)">
+                        <div class="card-top" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px;">
+                            @if (!string.IsNullOrWhiteSpace(card.Image))
+                            {
+                                <MudImage Src="@($"images/{card.Image}")"
+                                          Alt="@card.Title"
+                                          Style="width:96px; height:96px; object-fit:contain; margin-bottom:8px;" />
+                            }
                         </div>
-                        <div class="card-body">
-                            <MudText Typo="Typo.h6">@card.Title</MudText>
-                            <MudText Typo="Typo.subtitle2" Class="muted">@card.Subtitle</MudText>
-                        </div>
-                        <div class="card-cta">
-                            <MudButton Variant="Variant.Filled" Size="Size.Small">View More</MudButton>
-                        </div>
-                    </button>
+                    <div class="card-row" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:12px 0 16px 0;">
+                        <MudText Typo="Typo.h6">@card.Title</MudText>
+                        <MudButton Variant="Variant.Filled"
+                                   Size="Size.Small"
+                                   Class="ml-3"
+                                   OnClick="@((MouseEventArgs _) => NavigateTo(card.Route))">
+                            View More
+                        </MudButton>
+                    </div>
+                    
                 </MudPaper>
             </MudItem>
         }
@@ -31,14 +40,15 @@
 </MudContainer>
 
 @code {
-    record CardModel(string Title, string Subtitle, string Route, string Icon);
+    record CardModel(string Title, string Route, string? Image = null);
 
     private readonly CardModel[] Cards = new[]
     {
-        new CardModel("System Users", "Manage app users", "/system-users", Icons.Material.Filled.Group),
-        new CardModel("NemoQ Users", "Manage NemoQ connections", "/nemoq-users", Icons.Material.Filled.ListAlt),
-        new CardModel("TouchScreen", "Touchscreen config & preview", "/touchscreen", Icons.Material.Filled.TouchApp),
-        new CardModel("Statistics", "Reports & analytics", "/statistics", Icons.Material.Filled.BarChart)
+        new CardModel("System Users", "/system-users", "michaelangelo.png"),
+        new CardModel("NemoQ Users", "/nemoq-users", "leonardo.png"),
+        new CardModel("TouchScreen", "/touchscreen", "kiosk.png"),
+        new CardModel("Statistics",  "/statistics", "insight.png"),
+        new CardModel("Logs", "/logs", "log-file.png")
     };
 
     void NavigateTo(string route)
