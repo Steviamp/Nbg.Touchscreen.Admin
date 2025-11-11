@@ -1,0 +1,97 @@
+﻿@page "/logs"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@using System.IO
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-6">
+    <MudText Typo="Typo.h5" Class="mb-4">Application Logs</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
+    else if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+    }
+
+    <MudTable Items="_items" Dense="true" Hover="true" Bordered="false" Striped="true">
+        <HeaderContent>
+            <MudTh><MudText Style="font-weight:900; font-size:1.1rem;">File</MudText></MudTh>
+            <MudTh><MudText Style="font-weight:900; font-size:1.1rem;">Size</MudText></MudTh>
+            <MudTh><MudText Style="font-weight:900; font-size:1.1rem;">Last write (UTC)</MudText></MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="File">@context.Name</MudTd>
+            <MudTd DataLabel="Size">@FormatSize(context.SizeBytes)</MudTd>
+            <MudTd DataLabel="Last write">@context.LastWriteUtc.ToString("yyyy-MM-dd HH:mm:ss")</MudTd>
+            <MudTd>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                           Href="@($"/admin/api/logs/{Uri.EscapeDataString(context.Name)}")"
+                           Target="_blank">
+                    Download
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Class="pa-4">No logs found.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudContainer>
+
+@code {
+    private record LogFileDto(string Name, long SizeBytes, DateTime LastWriteUtc);
+    private readonly List<LogFileDto> _items = new();
+
+    private bool _loading;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            var logsRoot = Path.Combine(AppContext.BaseDirectory, "App_Data", "logs");
+            if (!Directory.Exists(logsRoot))
+            {
+                _items.Clear();
+                return;
+            }
+
+            var files = Directory.GetFiles(logsRoot, "log-*.txt", SearchOption.TopDirectoryOnly)
+                                 .OrderByDescending(f => f);
+
+            _items.Clear();
+            foreach (var f in files)
+            {
+                var fi = new FileInfo(f);
+                _items.Add(new LogFileDto(
+                    fi.Name,
+                    fi.Length,
+                    fi.LastWriteTimeUtc
+                ));
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to load logs: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        double kb = bytes / 1024d;
+        if (kb < 1024) return $"{kb:0.#} KB";
+        double mb = kb / 1024d;
+        return $"{mb:0.#} MB";
+    }
+}

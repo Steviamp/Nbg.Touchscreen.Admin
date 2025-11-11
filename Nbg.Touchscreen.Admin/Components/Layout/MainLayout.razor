@@ -3,11 +3,14 @@
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Components.Dialogs
 @using Microsoft.AspNetCore.Components.Routing
+@using System.Security.Claims
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<MudPopoverProvider />
 
 <MudLayout>
     <MudAppBar Color="Color.Primary" Elevation="4">
@@ -19,7 +22,6 @@
                  Style="position:absolute; left:50%; transform:translateX(-50%);">
             @PageTitle
         </MudText>
-
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
@@ -27,21 +29,44 @@
                 {
                     <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Href="/" Class="ml-2">Back</MudButton>
                 }
-                <MudButton Color="Color.Inherit" Variant="Variant.Outlined" Href="/auth/logout" Class="ml-2">Logout</MudButton>
+                <!-- User menu (avatar icon + dropdown) -->
+                <MudMenu AnchorOrigin="Origin.TopRight"
+                         TransformOrigin="Origin.TopRight"
+                         Icon="@Icons.Material.Filled.AccountCircle"
+                         Color="Color.Inherit"
+                         Class="ml-2">
+
+                    <!-- Info block -->
+                    <MudMenuItem Disabled="true" Style="white-space: nowrap;">
+                        <MudText Typo="Typo.subtitle2">@UserName</MudText><br />
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@UserRole</MudText>
+                    </MudMenuItem>
+
+                    <MudDivider />
+
+                    <!-- Logout (red) -->
+                    <MudMenuItem Href="/auth/logout" Color="Color.Error">
+                        <MudIcon Icon="@Icons.Material.Filled.Logout" Color="Color.Error" Class="mr-2" />
+                        <MudText Typo="Typo.body2" Color="Color.Error">Logout</MudText>
+                    </MudMenuItem>
+                </MudMenu>
             </Authorized>
         </AuthorizeView>
     </MudAppBar>
 
     <MudMainContent>
-        @Body
+        <CascadingValue Value="this">
+            @Body
+        </CascadingValue>
     </MudMainContent>
 </MudLayout>
 
 @code {
     private string PageTitle = "Mellon Queueing System";
     private bool IsHomePage => Nav.Uri.EndsWith("/");
-
-    // routes -> titles (πρόσθεσε/άλλαξε ελεύθερα)
+    private string? UserName;
+    private string? UserRole;
+    
     private readonly (string Match, string Title)[] _map =
     [
         ("/system-users", "System Users"),
@@ -50,10 +75,25 @@
         ("/statistics",   "Statistics"),
     ];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Nav.LocationChanged += OnLocationChanged;
         UpdateTitle();
+
+        // Fetch current user
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            UserName = user.Identity?.Name ?? "Unknown";
+            UserRole = user.FindFirst(ClaimTypes.Role)?.Value ?? "Viewer";
+        }
+        else
+        {
+            UserName = null;
+            UserRole = null;
+        }
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
@@ -61,11 +101,17 @@
 
     private void UpdateTitle()
     {
-        var uri = Nav.Uri.ToLowerInvariant();
+        var path = new Uri(Nav.Uri).AbsolutePath.ToLowerInvariant();
 
-        // βρες το πρώτο match από τον χάρτη
-        var hit = _map.FirstOrDefault(x => uri.Contains(x.Match));
-        PageTitle = string.IsNullOrEmpty(hit.Title) ? "Mellon Queueing System" : hit.Title;
+        PageTitle = path switch
+        {
+            "/system-users" => "System Users",
+            "/nemoq-users" => "NemoQ Users",
+            "/touchscreen" => "TouchScreen",
+            "/statistics" => "Statistics",
+            "/logs" => "Application Logs",
+            _ => "Mellon Queueing System"
+        };
 
         InvokeAsync(StateHasChanged);
     }

@@ -22,5 +22,13 @@
           if (form) form.submit();
         }
     </script>
+    <script>
+        window.addEventListener('unload', function (event) {
+            // Αν δεν είναι refresh, κάνε logout
+            if (!performance.getEntriesByType("navigation")[0]?.type.includes("reload")) {
+                navigator.sendBeacon('/auth/logout');
+            }
+        });
+    </script>
 </body>
 </html>
