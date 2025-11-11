@@ -1,0 +1,210 @@
+﻿@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Data
+@using Nbg.Touchscreen.Admin.Shared
+@using System.Security.Claims
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" Class="mb-2" />
+        }
+        else
+        {
+            <MudForm @ref="_form">
+                <MudTextField @bind-Value="_name"
+                              Label="Name"
+                              Required="true"
+                              Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="_email"
+                              Label="Email"
+                              Required="true"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+                @if (_isAdmin)
+                {
+                    <!-- ΜΟΝΟ Admin βλέπει / αλλάζει το Role -->
+                    <MudRadioGroup T="string"
+                                   @bind-Value="_role"
+                                   Class="mt-3">
+                        <MudRadio T="string" Value="@("Admin")" Color="Color.Primary">
+                            Admin
+                        </MudRadio>
+                        <MudRadio T="string" Value="@("Viewer")" Color="Color.Primary">
+                            Viewer
+                        </MudRadio>
+                    </MudRadioGroup>
+                }
+                else
+                {
+                    <MudText Class="mt-3">
+                        Role: <b>@_role</b>
+                    </MudText>
+                }
+
+                @if (!string.IsNullOrEmpty(_error))
+                {
+                    <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+                }
+            </MudForm>
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@(_saving || _loading)"
+                   OnClick="Save">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] 
+    public IMudDialogInstance? DialogInstance { get; set; }
+
+    [CascadingParameter] 
+    public Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
+    [Inject] 
+    public AppDbContext Db { get; set; } = default!;
+
+    [Inject] 
+    public ISnackbar Snackbar { get; set; } = default!;
+
+    [Parameter] 
+    public Guid UserId { get; set; }
+
+    private MudForm? _form;
+    private bool _loading;
+    private bool _saving;
+    private string? _error;
+
+    private string _name = "";
+    private string _email = "";
+    private string _role = "Viewer";
+    private bool _isActive = true;
+    private bool _isAdmin = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            // current logged-in user
+            var authState = await AuthenticationStateTask;
+            var currentUser = authState.User;
+
+            _isAdmin = currentUser.Identity?.IsAuthenticated == true &&
+                       currentUser.IsInRole("Admin");
+
+            // load user to edit
+            var user = await Db.Users.FirstOrDefaultAsync(u => u.Id == UserId);
+            if (user is null)
+            {
+                _error = "User not found.";
+                return;
+            }
+
+            _name = user.Name;
+            _email = user.Email;
+            _role = user.Role;
+            _isActive = user.IsActive;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error loading user: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _error = "Name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _error = "Email is required.";
+            return;
+        }
+
+        _email = _email.Trim();
+
+        if (!ValidationHelpers.IsValidEmail(_email))
+        {
+            _error = "Invalid email format.";
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            // check duplicate email
+            var exists = await Db.Users
+                .AnyAsync(u => u.Email == _email && u.Id != UserId);
+
+            if (exists)
+            {
+                _error = "Another user with this email already exists.";
+                return;
+            }
+
+            var user = await Db.Users.FirstOrDefaultAsync(u => u.Id == UserId);
+            if (user is null)
+            {
+                _error = "User not found.";
+                return;
+            }
+
+            user.Name     = _name;
+            user.Email    = _email.ToLowerInvariant();
+            user.IsActive = _isActive;
+
+            // μόνο Admin μπορεί να αλλάξει Role
+            if (_isAdmin)
+            {
+                user.Role = _role;
+            }
+
+            await Db.SaveChangesAsync();
+
+            Snackbar.Add("User updated successfully.", Severity.Success);
+            DialogInstance?.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error saving user: {ex.Message}";
+            Snackbar.Add(_error, Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

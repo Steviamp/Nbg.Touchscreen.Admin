@@ -22,13 +22,9 @@
                   Dense="true" 
                   Bordered="false" 
                   Striped="true">
-
             <ToolBarContent>
                 <MudText Typo="Typo.subtitle2">@($"{_totalItems} users")</MudText>
                 <MudSpacer />
-                <MudButton Variant="Variant.Outlined" OnClick="_users!.ReloadServerData">
-                    <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="mr-1" /> Reload
-                </MudButton>
                 <AuthorizeView>
                     <Authorized>
                         <MudButton 
@@ -60,13 +56,18 @@
                     @context.CreatedAtUtc.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
                 </MudTd>
                 <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Class="mr-1"
+                                   OnClick="@(() => OpenEditUser(context))" />
+
                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                    Color="Color.Error"
                                    Size="Size.Small"
                                    OnClick="@(() => DeleteUser(context))" />
                 </MudTd>
             </RowTemplate>
-
             <NoRecordsContent>
                 <MudText Class="pa-4">No users found.</MudText>
             </NoRecordsContent>
@@ -118,6 +119,30 @@
         {
             await _users.ReloadServerData();
             Snackbar.Add("User created.", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditUser(User user)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var parameters = new DialogParameters
+        {
+            ["UserId"] = user.Id
+        };
+
+        var dialogRef = await Dialogs.ShowAsync<EditUserDialog>("Edit user", parameters, options);
+        var result = await dialogRef.Result;
+
+        if (!result.Canceled)
+        {
+            await _users.ReloadServerData();
+            Snackbar.Add("User updated.", Severity.Success);
         }
     }
 
