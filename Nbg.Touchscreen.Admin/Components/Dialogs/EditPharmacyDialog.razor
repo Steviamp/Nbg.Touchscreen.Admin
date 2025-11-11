@@ -1,0 +1,90 @@
+﻿@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Data
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (_pharmacy == null)
+        {
+            <MudAlert Severity="Severity.Error">Pharmacy not found.</MudAlert>
+        }
+        else
+        {
+            <MudForm @ref="_form">
+                <MudTextField @bind-Value="_pharmacy.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="_pharmacy.Address" Label="Address" Variant="Variant.Outlined" Class="mt-3" />
+                <MudTextField @bind-Value="_pharmacy.City" Label="City" Variant="Variant.Outlined" Class="mt-3" />
+                <MudTextField @bind-Value="_pharmacy.State" Label="State" Variant="Variant.Outlined" Class="mt-3" />
+            </MudForm>
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="@(()=>DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@_saving" OnClick="Save">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
+
+    [Parameter] public int PharmacyId { get; set; }
+
+    private MudForm? _form;
+    private Pharmacy? _pharmacy;
+    private bool _loading = true;
+    private bool _saving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _pharmacy = await Db.Pharmacies.FirstOrDefaultAsync(p => p.Id == PharmacyId);
+        _loading = false;
+    }
+
+    private async Task Save()
+    {
+        if (_pharmacy == null)
+        {
+            Snackbar.Add("Pharmacy not found.", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_pharmacy.Name))
+        {
+            Snackbar.Add("Name is required.", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            _saving = true;
+            Db.Pharmacies.Update(_pharmacy);
+            await Db.SaveChangesAsync();
+            Snackbar.Add("Pharmacy updated.", Severity.Success);
+            DialogInstance?.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving pharmacy: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
+

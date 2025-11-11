@@ -1,0 +1,140 @@
+﻿@page "/pharmacies"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@using Microsoft.EntityFrameworkCore
+@using Nbg.Touchscreen.Admin.Components.Dialogs
+@using Nbg.Touchscreen.Admin.Data
+@inject AppDbContext Db
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-6">
+    <MudPaper Class="pa-0 mt-4">
+        <MudTable T="Pharmacy"
+                  @ref="_table"
+                  ServerData="LoadServerData"
+                  RowsPerPage="10"
+                  Hover="true"
+                  Dense="true"
+                  Bordered="false"
+                  Striped="true">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.subtitle2">@($"{_totalItems} pharmacies")</MudText>
+                <MudSpacer />
+                <AuthorizeView>
+                    <Authorized>
+                        <MudButton Color="Color.Inherit" Variant="Variant.Outlined" OnClick="OpenCreatePharmacy" Class="ml-2">Create pharmacy</MudButton>
+                    </Authorized>
+                </AuthorizeView>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>Id</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>City</MudTh>
+                <MudTh>State</MudTh>
+                <MudTh>Created At</MudTh>
+            </HeaderContent>
+
+            <RowTemplate Context="p">
+                <MudTd>@p.Id</MudTd>
+                <MudTd>
+                    <div class="d-flex flex-column">
+                        <span>@p.Name</span>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@p.Address</MudText>
+                    </div>
+                </MudTd>
+                <MudTd>@p.City</MudTd>
+                <MudTd>@p.State</MudTd>
+                <MudTd>@p.CreatedAtUtc.ToLocalTime().ToString("dd-MM-yyyy HH:mm")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EditPharmacy(p))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeletePharmacy(p))" />
+                </MudTd>
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText Class="pa-4">No pharmacies found.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudTable<Pharmacy>? _table;
+    private int _totalItems;
+    private string _search = "";
+
+    private Task<TableData<Pharmacy>> LoadServerData(TableState state, CancellationToken ct)
+    {
+        return LoadServerDataImpl(state, ct);
+    }
+
+    private async Task<TableData<Pharmacy>> LoadServerDataImpl(TableState state, CancellationToken ct)
+    {
+        IQueryable<Pharmacy> query = Db.Pharmacies.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var s = _search.Trim().ToLower();
+            query = query.Where(u =>
+                (u.Name ?? "").ToLower().Contains(s) ||
+                (u.City ?? "").ToLower().Contains(s) ||
+                (u.Address ?? "").ToLower().Contains(s));
+        }
+
+        _totalItems = await query.CountAsync(ct);
+        query = query.OrderByDescending(u => u.CreatedAtUtc);
+
+        var items = await query
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync(ct);
+
+        return new TableData<Pharmacy> { TotalItems = _totalItems, Items = items };
+    }
+
+    private async Task OpenCreatePharmacy()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await Dialogs.ShowAsync<CreatePharmacyDialog>("Create pharmacy", options: options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await _table?.ReloadServerData();
+            Snackbar.Add("Pharmacy created.", Severity.Success);
+        }
+    }
+
+    private async Task EditPharmacy(Pharmacy p)
+    {
+        var parameters = new DialogParameters { { "PharmacyId", p.Id } };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await Dialogs.ShowAsync<EditPharmacyDialog>("Edit pharmacy", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await _table?.ReloadServerData();
+            Snackbar.Add("Saved.", Severity.Success);
+        }
+    }
+
+    private async Task DeletePharmacy(Pharmacy p)
+    {
+        var del = await Dialogs.ShowMessageBox("Delete", $"Delete pharmacy '{p.Name}'?", yesText: "Delete", noText: "Cancel");
+        if (del == true)
+        {
+            var ent = await Db.Pharmacies.FindAsync(p.Id);
+            if (ent != null)
+            {
+                Db.Pharmacies.Remove(ent);
+                await Db.SaveChangesAsync();
+                await _table?.ReloadServerData();
+                Snackbar.Add("Deleted.", Severity.Success);
+            }
+        }
+    }
+}

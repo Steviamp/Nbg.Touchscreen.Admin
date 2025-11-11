@@ -7,6 +7,7 @@ namespace Nbg.Touchscreen.Admin.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<User> Users { get; set; } = default!;
+        public DbSet<Pharmacy> Pharmacies { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

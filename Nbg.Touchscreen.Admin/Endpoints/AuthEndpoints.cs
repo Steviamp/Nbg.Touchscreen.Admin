@@ -79,8 +79,29 @@ public static class AuthEndpoints
             return Results.Redirect("/login");
         })
         .DisableAntiforgery();
+
+        // -------- FORGOT PASSWORD --------
+        app.MapPost("/auth/forgot-password", async (
+            [FromForm] ForgotPasswordDto dto,
+            AppDbContext db) =>
+        {
+            var email = dto.Email?.Trim().ToLowerInvariant();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+                if (user != null)
+                {
+                    // TODO: εδώ αργότερα θα βάλουμε token + email send
+                    Serilog.Log.Information("Password reset requested for {Email}", email);
+                }
+            }
+
+            return Results.Redirect("/forgot-password?status=ok");
+        });
     }
 
     public record LoginDto(string Email, string Password, string? ReturnUrl);
+    public record ForgotPasswordDto(string Email);
 }
 

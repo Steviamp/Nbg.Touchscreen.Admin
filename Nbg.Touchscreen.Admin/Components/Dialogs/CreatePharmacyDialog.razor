@@ -1,0 +1,54 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Data
+@inject AppDbContext Db
+@inject ISnackbar Snackbar
+@attribute [Authorize]
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_name" Label="Name" Required="true" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_address" Label="Address" Variant="Variant.Outlined" Class="mt-3" />
+            <MudTextField @bind-Value="_city" Label="City" Variant="Variant.Outlined" Class="mt-3" />
+            <MudTextField @bind-Value="_state" Label="State" Variant="Variant.Outlined" Class="mt-3" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Save">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
+
+    private MudForm? _form;
+    private string _name = "";
+    private string? _address;
+    private string? _city;
+    private string? _state;
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            Snackbar.Add("Name required", Severity.Error);
+            return;
+        }
+
+        var ent = new Pharmacy
+        {
+            Name = _name,
+            Address = _address,
+            City = _city,
+            State = _state,
+            CreatedAtUtc = DateTime.UtcNow,
+        };
+
+        Db.Pharmacies.Add(ent);
+        await Db.SaveChangesAsync();
+
+        DialogInstance?.Close(DialogResult.Ok(true));
+    }
+}

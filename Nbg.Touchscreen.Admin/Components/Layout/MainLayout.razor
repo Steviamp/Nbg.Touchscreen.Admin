@@ -71,8 +71,12 @@
     [
         ("/system-users", "System Users"),
         ("/nemoq-users",  "NemoQ Users"),
-        ("/touchscreen",  "TouchScreen"),
-        ("/statistics",   "Statistics"),
+        ("/pharmacies",  "Pharmacies"),
+        ("/services",   "Services"),
+        ("/queues", "Queues"),
+        ("/settings",  "Settings"),
+        ("/logs",  "Application Logs")
+
     ];
 
     protected override async Task OnInitializedAsync()
@@ -107,8 +111,10 @@
         {
             "/system-users" => "System Users",
             "/nemoq-users" => "NemoQ Users",
-            "/touchscreen" => "TouchScreen",
-            "/statistics" => "Statistics",
+            "/pharmacies" => "Pharmacies",
+            "/services" =>  "Services",
+            "/queues"=> "Queues",
+            "/settings" => "Settings",
             "/logs" => "Application Logs",
             _ => "Mellon Queueing System"
         };
