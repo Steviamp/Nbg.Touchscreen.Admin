@@ -361,3 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Nbg.Touchscreen.Admin/Components/Pages/queues.razor
