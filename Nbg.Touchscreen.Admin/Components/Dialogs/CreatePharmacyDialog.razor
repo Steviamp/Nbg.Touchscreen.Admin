@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Data
 @inject AppDbContext Db
@@ -7,16 +8,93 @@
 
 <MudDialog>
     <DialogContent>
-        <MudForm @ref="_form">
-            <MudTextField @bind-Value="_name" Label="Name" Required="true" Variant="Variant.Outlined" />
-            <MudTextField @bind-Value="_address" Label="Address" Variant="Variant.Outlined" Class="mt-3" />
-            <MudTextField @bind-Value="_city" Label="City" Variant="Variant.Outlined" Class="mt-3" />
-            <MudTextField @bind-Value="_state" Label="State" Variant="Variant.Outlined" Class="mt-3" />
-        </MudForm>
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else
+        {
+            <MudForm @ref="_form">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Basic Info</MudText>
+
+                <MudTextField @bind-Value="_name"
+                              Label="Name"
+                              Required="true"
+                              Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="_address"
+                              Label="Address"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+                <MudTextField @bind-Value="_city"
+                              Label="City"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+                <MudTextField @bind-Value="_state"
+                              Label="State"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+                <MudTextField @bind-Value="_zip"
+                              Label="ZipCode"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+
+                <MudDivider Class="my-4" />
+
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Contact</MudText>
+
+                <MudTextField @bind-Value="_ownerName"
+                              Label="Owner Name"
+                              Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="_email"
+                              Label="Email"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+                <MudTextField @bind-Value="_phone"
+                              Label="Phone"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+
+                <MudDivider Class="my-4" />
+
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Geo (optional)</MudText>
+
+                <MudTextField @bind-Value="_latitude"
+                              Label="Latitude"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+                <MudTextField @bind-Value="_longitude"
+                              Label="Longitude"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+
+                <MudDivider Class="my-4" />
+
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Service</MudText>
+
+                <MudSelect T="int" Label="Select Service" @bind-Value="_serviceId" Variant="Variant.Outlined" Class="mt-1">
+                    <MudSelectItem Value="0">– none –</MudSelectItem>
+                    @foreach (var s in _services)
+                    {
+                        <MudSelectItem Value="@s.Id">@s.Name (@s.Ip:@s.Port)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudForm>
+        }
     </DialogContent>
+
     <DialogActions>
-        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Save">Create</MudButton>
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())"
+                   Disabled="_saving">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Save"
+                   Disabled="_saving">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Create
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -24,31 +102,112 @@
     [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
 
     private MudForm? _form;
+
+    private bool _loading = true;
+    private bool _saving = false;
+
+    // fields
     private string _name = "";
     private string? _address;
     private string? _city;
     private string? _state;
+    private string? _zip;
+    private string? _ownerName;
+    private string? _email;
+    private string? _phone;
+    private string? _latitude;
+    private string? _longitude;
+    private int _serviceId;
+
+    private List<Service> _services = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // φόρτωσε services για dropdown
+        _services = await Db.Services
+            .OrderBy(s => s.Name)
+            .ToListAsync();
+
+        _loading = false;
+    }
 
     private async Task Save()
     {
+        if (_saving) return;
+
+        // basic validation
         if (string.IsNullOrWhiteSpace(_name))
         {
-            Snackbar.Add("Name required", Severity.Error);
+            Snackbar.Add("Name is required.", Severity.Error);
             return;
         }
 
-        var ent = new Pharmacy
+        if (!string.IsNullOrWhiteSpace(_email) && !IsValidEmail(_email))
         {
-            Name = _name,
-            Address = _address,
-            City = _city,
-            State = _state,
-            CreatedAtUtc = DateTime.UtcNow,
-        };
+            Snackbar.Add("Invalid email format.", Severity.Error);
+            return;
+        }
 
-        Db.Pharmacies.Add(ent);
-        await Db.SaveChangesAsync();
+        // optional: validate lat/lon numeric
+        if (!string.IsNullOrWhiteSpace(_latitude) && !double.TryParse(_latitude, out _))
+        {
+            Snackbar.Add("Latitude must be a number.", Severity.Error);
+            return;
+        }
+        if (!string.IsNullOrWhiteSpace(_longitude) && !double.TryParse(_longitude, out _))
+        {
+            Snackbar.Add("Longitude must be a number.", Severity.Error);
+            return;
+        }
 
-        DialogInstance?.Close(DialogResult.Ok(true));
+        try
+        {
+            _saving = true;
+
+            var ent = new Pharmacy
+            {
+                Name = _name.Trim(),
+                Address = _address?.Trim(),
+                City = _city?.Trim(),
+                State = _state?.Trim(),
+                ZipCode = _zip?.Trim(),
+                OwnerName = _ownerName?.Trim(),
+                Email = _email?.Trim(),
+                Phone = _phone?.Trim(),
+                CreatedAtUtc = DateTime.UtcNow,
+                ServiceId = _serviceId,
+
+                // αν έχεις numeric properties στο model, κάνε parse εδώ:
+                Latitude = ParseNullableDouble(_latitude),
+                Longitude = ParseNullableDouble(_longitude)
+            };
+
+            Db.Pharmacies.Add(ent);
+            await Db.SaveChangesAsync();
+
+            Snackbar.Add("Pharmacy created.", Severity.Success);
+            DialogInstance?.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating pharmacy: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
+
+    private static bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch { return false; }
+    }
+
+    private static double? ParseNullableDouble(string? s)
+        => double.TryParse(s, out var v) ? v : (double?)null;
 }

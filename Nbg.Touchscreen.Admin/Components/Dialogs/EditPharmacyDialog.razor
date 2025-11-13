@@ -19,17 +19,103 @@
         else
         {
             <MudForm @ref="_form">
-                <MudTextField @bind-Value="_pharmacy.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
-                <MudTextField @bind-Value="_pharmacy.Address" Label="Address" Variant="Variant.Outlined" Class="mt-3" />
-                <MudTextField @bind-Value="_pharmacy.City" Label="City" Variant="Variant.Outlined" Class="mt-3" />
-                <MudTextField @bind-Value="_pharmacy.State" Label="State" Variant="Variant.Outlined" Class="mt-3" />
+                <MudTextField @bind-Value="_pharmacy.Name"
+                              Label="Name"
+                              Required="true"
+                              Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="_pharmacy.Address"
+                              Label="Address"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+
+                <MudGrid Class="mt-3" Gutter="Gutter.None">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_pharmacy.City"
+                                      Label="City"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudTextField @bind-Value="_pharmacy.State"
+                                      Label="State"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudTextField @bind-Value="_pharmacy.ZipCode"
+                                      Label="Zip Code"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Owner & Contact</MudText>
+
+                <MudGrid Gutter="Gutter.None">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_pharmacy.OwnerName"
+                                      Label="Owner Name"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_pharmacy.Email"
+                                      Label="Email"
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      OnBlur="ValidateEmail" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" Class="mt-3">
+                        <MudTextField @bind-Value="_pharmacy.Phone"
+                                      Label="Phone"
+                                      Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Location</MudText>
+
+                <MudGrid Gutter="Gutter.None">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_longitude"
+                                      Label="Longitude"
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      OnBlur="TryApplyLongitude" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_latitude"
+                                      Label="Latitude"
+                                      Variant="Variant.Outlined"
+                                      Immediate="true"
+                                      OnBlur="TryApplyLatitude" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Service</MudText>
+
+                <MudSelect T="int?"
+                           Label="Select Service"
+                           @bind-Value="_pharmacy.ServiceId"
+                           Variant="Variant.Outlined">
+                    @if (_services != null)
+                    {
+                        @foreach (var s in _services)
+                        {
+                            <MudSelectItem Value="s.Id">@s.Name</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+
             </MudForm>
         }
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="@(()=>DialogInstance?.Cancel())">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@_saving" OnClick="Save">
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@_saving"
+                   OnClick="Save">
             @if (_saving)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -41,7 +127,6 @@
 
 @code {
     [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
-
     [Parameter] public int PharmacyId { get; set; }
 
     private MudForm? _form;
@@ -49,10 +134,69 @@
     private bool _loading = true;
     private bool _saving = false;
 
+    // Dropdown services
+    private List<Service>? _services;
+
+    // Τοπογραφικά ως string για εύκολο validation/parse
+    private string? _longitude;
+    private string? _latitude;
+
     protected override async Task OnInitializedAsync()
     {
-        _pharmacy = await Db.Pharmacies.FirstOrDefaultAsync(p => p.Id == PharmacyId);
+        // Φόρτωσε Pharmacy
+        _pharmacy = await Db.Pharmacies
+            .FirstOrDefaultAsync(p => p.Id == PharmacyId);
+
+        _services = await Db.Services
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.Name)
+            .ToListAsync();
+
+        // Prefill lon/lat text
+        if (_pharmacy != null)
+        {
+            _longitude = _pharmacy.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _latitude = _pharmacy.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
         _loading = false;
+    }
+
+    private void ValidateEmail(FocusEventArgs _)
+    {
+        if (string.IsNullOrWhiteSpace(_pharmacy?.Email))
+            return;
+
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(_pharmacy!.Email);
+        }
+        catch
+        {
+            Snackbar.Add("Invalid email format.", Severity.Warning);
+        }
+    }
+
+    private void TryApplyLongitude(FocusEventArgs _)
+    {
+        if (_pharmacy is null) return;
+        if (double.TryParse(_longitude, System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            out var val))
+            _pharmacy.Longitude = val;
+        else
+            Snackbar.Add("Invalid longitude.", Severity.Warning);
+    }
+
+    private void TryApplyLatitude(FocusEventArgs _)
+    {
+        if (_pharmacy is null) return;
+        if (double.TryParse(_latitude, System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            out var val))
+            _pharmacy.Latitude = val;
+        else
+            Snackbar.Add("Invalid latitude.", Severity.Warning);
     }
 
     private async Task Save()
@@ -72,8 +216,11 @@
         try
         {
             _saving = true;
+
+            // αν είναι tracked απλά SaveChanges, αλλιώς Update
             Db.Pharmacies.Update(_pharmacy);
             await Db.SaveChangesAsync();
+
             Snackbar.Add("Pharmacy updated.", Severity.Success);
             DialogInstance?.Close(DialogResult.Ok(true));
         }
@@ -87,4 +234,3 @@
         }
     }
 }
-
