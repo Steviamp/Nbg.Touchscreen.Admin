@@ -9,6 +9,7 @@ namespace Nbg.Touchscreen.Admin.Data
         public DbSet<User> Users { get; set; } = default!;
         public DbSet<Pharmacy> Pharmacies { get; set; } = default!;
         public DbSet<Service> Services { get; set; } = default!;
+        public DbSet<Queue> Queues { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

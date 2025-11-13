@@ -1,0 +1,70 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Data
+@inject AppDbContext Db
+@inject ISnackbar Snackbar
+@attribute [Authorize]
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_name" Label="Queue name" Required="true" Variant="Variant.Outlined" />
+            <MudSelect T="int?" Label="Service" @bind-Value="_serviceId" Variant="Variant.Outlined" Class="mt-3">
+                <MudSelectItem T="int?" Value="@((int?)null)">– none –</MudSelectItem>
+                @foreach (var s in _services)
+                {
+                    <MudSelectItem T="int?" Value="@((int?)s.Id)">@s.Name (@s.Ip:@s.Port)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(()=>DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save" Disabled="_saving">
+            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
+
+    private MudForm? _form;
+    private string _name = "";
+    private int? _serviceId;
+    private bool _isActive = true;
+    private bool _saving;
+    private List<Service> _services = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _services = await Db.Services.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        { Snackbar.Add("Name required", Severity.Error); return; }
+
+        _saving = true;
+        try
+        {
+            var ent = new Queue
+            {
+                Name = _name.Trim(),
+                ServiceId = _serviceId,
+                IsActive = _isActive,
+                CreatedAtUtc = DateTime.UtcNow
+            };
+            Db.Queues.Add(ent);
+            await Db.SaveChangesAsync();
+            DialogInstance?.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        { Snackbar.Add($"Error creating queue: {ex.Message}", Severity.Error); }
+        finally { _saving = false; }
+    }
+}
+
