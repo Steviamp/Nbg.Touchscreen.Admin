@@ -24,15 +24,13 @@
 
             <MudGrid Gutter="Gutter.None">
                 <MudItem xs="12" sm="4">
-                    <MudSelect T="int"
-                               Label="Max tickets per day"
-                               @bind-Value="_maxTickets"
-                               Disabled="_saving">
-                        @foreach (var v in _options)
-                        {
-                            <MudSelectItem Value="@v">@v</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudNumericField T="int"
+                                     Label="Max tickets per day"
+                                     @bind-Value="_maxTickets"
+                                     Disabled="_saving"
+                                     Min="1"
+                                     Max="1000"
+                                     Immediate="true" />
                 </MudItem>
                 <MudItem xs="12" sm="4" Class="d-flex align-center mt-3 mt-sm-0">
                     <MudButton Color="Color.Primary"
@@ -56,8 +54,6 @@
     private bool _saving;
     private int _maxTickets;
     private int _settingsId = 1;
-
-    private readonly int[] _options = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
 
     protected override async Task OnInitializedAsync()
     {

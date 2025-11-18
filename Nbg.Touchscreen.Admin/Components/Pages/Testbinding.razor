@@ -1,0 +1,13 @@
+﻿@page "/test-binding"
+
+<MudCheckBox T="bool" @bind-Checked="_test.Enabled" Label="Test" />
+
+@code {
+    class TestObj
+    {
+        public bool Enabled { get; set; }
+    }
+
+    TestObj _test = new TestObj();
+}
+
