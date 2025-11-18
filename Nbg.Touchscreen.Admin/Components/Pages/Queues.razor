@@ -1,0 +1,138 @@
+﻿@page "/queues"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Components.Dialogs
+@using Nbg.Touchscreen.Admin.Data
+@inject AppDbContext Db
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-6">
+    <MudPaper Class="pa-0">
+        <MudTable T="Queue"
+                  @ref="_table"
+                  ServerData="LoadServerData"
+                  RowsPerPage="10"
+                  Dense="true" Hover="true" Striped="true">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.subtitle2">@($"{_totalItems} queues")</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="_search" Placeholder="Search name…" Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true"
+                              OnKeyDown="OnSearchKey" Class="mr-2" />
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="_table!.ReloadServerData" />
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Class="ml-2"
+                           OnClick="OpenCreate">Create</MudButton>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh><MudText Style="font-weight:800;">Queue Name</MudText></MudTh>
+                <MudTh><MudText Style="font-weight:800;">Service</MudText></MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd DataLabel="Queue Name">@context.Name</MudTd>
+                <MudTd DataLabel="Service">@(context.Service?.Name ?? "-")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(()=>OpenEdit(context.Id))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                   OnClick="@(()=>DeleteQueue(context))" />
+                </MudTd>
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText Class="pa-4">No queues found.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudTable<Queue>? _table;
+    private string _search = "";
+    private int _totalItems;
+
+    private async Task<TableData<Queue>> LoadServerData(TableState state, CancellationToken token)
+    {
+        IQueryable<Queue> q = Db.Queues.AsNoTracking().Include(x => x.Service);
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var s = _search.Trim().ToLower();
+            q = q.Where(x => x.Name.ToLower().Contains(s)
+                          || (x.Service != null && x.Service.Name.ToLower().Contains(s)));
+        }
+
+        _totalItems = await q.CountAsync(token);
+        q = q.OrderByDescending(x => x.CreatedAtUtc)
+             .Skip(state.Page * state.PageSize)
+             .Take(state.PageSize);
+
+        var items = await q.ToListAsync(token);
+        return new TableData<Queue> { TotalItems = _totalItems, Items = items };
+    }
+
+    private async Task OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await _table!.ReloadServerData();
+    }
+
+    private async Task OpenCreate()
+    {
+        var dlg = await Dialogs.ShowAsync<CreateQueueDialog>("Create queue",
+            options: new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var res = await dlg.Result;
+        if (!res.Canceled)
+        {
+            await _table!.ReloadServerData();
+            Snackbar.Add("Queue created.", Severity.Success);
+        }
+    }
+
+    private async Task OpenEdit(int id)
+    {
+        var parms = new DialogParameters { ["QueueId"] = id };
+        var dlg = await Dialogs.ShowAsync<EditQueueDialog>("Edit queue", parms,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var res = await dlg.Result;
+        if (!res.Canceled)
+        {
+            await _table!.ReloadServerData();
+            Snackbar.Add("Queue updated.", Severity.Success);
+        }
+    }
+
+    private async Task DeleteQueue(Queue q)
+    {
+        var prm = new DialogParameters {
+            ["ContentText"] = $"Delete queue '{q.Name}'?",
+            ["ButtonText"]  = "Delete",
+            ["Color"]       = Color.Error
+        };
+        var dlg = await Dialogs.ShowAsync<ConfirmDialog>("Delete Queue", prm);
+        var res = await dlg.Result;
+        if (res.Canceled) return;
+
+        try
+        {
+            var ent = await Db.Queues.FindAsync(q.Id);
+            if (ent != null)
+            {
+                Db.Queues.Remove(ent);
+                await Db.SaveChangesAsync();
+                Snackbar.Add("Queue deleted.", Severity.Success);
+                await _table!.ReloadServerData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+}
+
