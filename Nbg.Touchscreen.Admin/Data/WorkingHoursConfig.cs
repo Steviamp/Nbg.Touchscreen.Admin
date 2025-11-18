@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Nbg.Touchscreen.Admin.Data;
+﻿namespace Nbg.Touchscreen.Admin.Data;
 
 public class WorkingHoursConfig
 {

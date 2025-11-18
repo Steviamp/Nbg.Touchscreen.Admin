@@ -96,22 +96,18 @@
     private bool _loading = true;
     private bool _saving;
 
-    // ουρές & επιλεγμένη ουρά
     private List<Queue> _queues = new();
     private int? _queueId;
 
     protected override async Task OnInitializedAsync()
     {
-        // Φόρτωσε το service
         _service = await Db.Services
             .FirstOrDefaultAsync(x => x.Id == ServiceId);
 
-        // Φόρτωσε όλες τις ουρές
         _queues = await Db.Queues
             .OrderBy(q => q.Name)
             .ToListAsync();
 
-        // Βρες αν κάποια ουρά είναι ήδη δεμένη με αυτό το service
         if (_service != null)
         {
             var currentQueue = _queues.FirstOrDefault(q => q.ServiceId == _service.Id);
@@ -140,10 +136,8 @@
         {
             _saving = true;
 
-            // Ενημέρωση service
             Db.Services.Update(_service);
 
-            // 1) καθάρισε τυχόν ουρές που ήταν δεμένες σε αυτό το service
             var queuesWithThisService = await Db.Queues
                 .Where(q => q.ServiceId == _service.Id)
                 .ToListAsync();
@@ -153,7 +147,6 @@
                 q.ServiceId = null;
             }
 
-            // 2) αν έχει επιλεγεί νέα ουρά, δέσε την
             if (_queueId.HasValue)
             {
                 var newQueue = await Db.Queues
@@ -166,7 +159,7 @@
             }
 
             await Db.SaveChangesAsync();
-
+            Snackbar.Add($"DEBUG: Mon={_service.Monday}, Tue={_service.Tuesday}", Severity.Info);
             Snackbar.Add("Service updated.", Severity.Success);
             DialogInstance?.Close(DialogResult.Ok(true));
         }

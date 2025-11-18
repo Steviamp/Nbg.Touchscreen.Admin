@@ -1,9 +1,10 @@
 ﻿@attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.EntityFrameworkCore
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Data
-@using Microsoft.EntityFrameworkCore
-@using System.Text.Json;
+@using System.Text.Json
 @inject AppDbContext Db
 @inject ISnackbar Snackbar
 
@@ -13,13 +14,14 @@
         {
             <MudProgressLinear Indeterminate="true" />
         }
-        else if (_pharmacy == null)
+        else if (_pharmacy is null)
         {
             <MudAlert Severity="Severity.Error">Pharmacy not found.</MudAlert>
         }
         else
         {
             <MudForm @ref="_form">
+                <!-- Βασικά στοιχεία -->
                 <MudTextField @bind-Value="_pharmacy.Name"
                               Label="Name"
                               Required="true"
@@ -43,18 +45,18 @@
                     </MudItem>
                     <MudItem xs="12" sm="3">
                         <MudTextField @bind-Value="_pharmacy.ZipCode"
-                                      Label="Zip Code"
+                                      Label="Zip code"
                                       Variant="Variant.Outlined" />
                     </MudItem>
                 </MudGrid>
 
                 <MudDivider Class="my-4" />
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Owner &amp; Contact</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Owner &amp; contact</MudText>
 
                 <MudGrid Gutter="Gutter.None">
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="_pharmacy.OwnerName"
-                                      Label="Owner Name"
+                                      Label="Owner name"
                                       Variant="Variant.Outlined" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
@@ -95,34 +97,40 @@
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Service</MudText>
 
                 <MudSelect T="int?"
-                           Label="Select Service"
+                           Label="Select service"
                            @bind-Value="_pharmacy.ServiceId"
                            Variant="Variant.Outlined">
-                    @if (_services != null)
+                    @foreach (var s in _services)
                     {
-                        @foreach (var s in _services)
-                        {
-                            <MudSelectItem T="int?" Value="@s.Id">@s.Name</MudSelectItem>
-                        }
+                        <MudSelectItem T="int?" Value="@s.Id">@s.Name</MudSelectItem>
                     }
                 </MudSelect>
-                                <MudDivider Class="my-4" />
+
+                <!-- Ωράρια -->
+                <MudDivider Class="my-4" />
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Working hours</MudText>
 
-                @foreach (var day in _config.Days)
+                @foreach (var day in _config.Days.OrderBy(d => d.Day))
                 {
-                    <MudStack Row="true" Class="mb-2" AlignItems="AlignItems.Center">
+                    <MudStack Row="true"
+                              AlignItems="AlignItems.Center"
+                              Class="mb-2"
+                              @key="day.Day">
                         <MudCheckBox T="bool"
                                      @bind-Checked="day.Enabled"
                                      Label="@day.Day.ToString()" />
 
-                        <MudTimePicker @bind-Time="day.From"
+                        <MudTimePicker T="TimeSpan?"
+                                       @bind-Time="day.From"
+                                       Converter="_timeSpanConverter"
                                        Label="από"
                                        Disabled="!day.Enabled"
                                        Class="ml-4"
                                        AmPm="false" />
 
-                        <MudTimePicker @bind-Time="day.To"
+                        <MudTimePicker T="TimeSpan?"
+                                       @bind-Time="day.To"
+                                       Converter="_timeSpanConverter"
                                        Label="έως"
                                        Disabled="!day.Enabled"
                                        Class="ml-2"
@@ -130,6 +138,7 @@
                     </MudStack>
                 }
 
+                <!-- Αργίες -->
                 <MudDivider Class="my-4" />
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Bank holidays</MudText>
 
@@ -143,8 +152,9 @@
                         Add
                     </MudButton>
                 </MudStack>
+
                 <MudChipSet T="DateOnly">
-                    @foreach (var d in _config.BankHolidays)
+                    @foreach (var d in _config.BankHolidays.OrderBy(d => d))
                     {
                         <MudChip T="DateOnly"
                                  Value="d"
@@ -159,14 +169,18 @@
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">
+            Cancel
+        </MudButton>
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
-                   Disabled="@_saving"
+                   Disabled="_saving"
                    OnClick="Save">
             @if (_saving)
             {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true"
+                                     Class="mr-2" />
             }
             Save
         </MudButton>
@@ -176,13 +190,13 @@
 @code {
     [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
     [Parameter] public int PharmacyId { get; set; }
-    
+
     private MudForm? _form;
     private Pharmacy? _pharmacy;
     private bool _loading = true;
-    private bool _saving = false;
+    private bool _saving;
 
-    private List<Service>? _services;
+    private List<Service> _services = new();
 
     private string? _longitude;
     private string? _latitude;
@@ -190,27 +204,30 @@
     private WorkingHoursConfig _config = new();
     private DateTime? _newHolidayDate;
 
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        WriteIndented = false
+    };
+
     protected override async Task OnInitializedAsync()
     {
-        _pharmacy = await Db.Pharmacies
-            .FirstOrDefaultAsync(p => p.Id == PharmacyId);
+        _pharmacy = await Db.Pharmacies.FirstOrDefaultAsync(p => p.Id == PharmacyId);
+        _services = await Db.Services.Where(s => s.IsActive)
+                                     .OrderBy(s => s.Name)
+                                     .ToListAsync();
 
-        _services = await Db.Services
-            .Where(s => s.IsActive)
-            .OrderBy(s => s.Name)
-            .ToListAsync();
-
-        if (_pharmacy != null)
+        if (_pharmacy is not null)
         {
             _longitude = _pharmacy.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
             _latitude = _pharmacy.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
-        // ---------- WorkingHoursJson LOAD ----------
-        if (!string.IsNullOrWhiteSpace(_pharmacy.WorkingHoursJson))
+
+        // ----- φόρτωμα WorkingHoursJson -----
+        if (!string.IsNullOrWhiteSpace(_pharmacy?.WorkingHoursJson))
         {
             try
             {
-                _config = JsonSerializer.Deserialize<WorkingHoursConfig>(_pharmacy.WorkingHoursJson!)
+                _config = JsonSerializer.Deserialize<WorkingHoursConfig>(_pharmacy!.WorkingHoursJson!, _jsonOptions)
                           ?? new WorkingHoursConfig();
             }
             catch
@@ -219,22 +236,31 @@
             }
         }
 
-        // Αν δεν υπάρχουν Days, φτιάξε default entries για όλη την εβδομάδα
+        // default Days αν δεν υπάρχουν
         if (_config.Days == null || _config.Days.Count == 0)
         {
             _config.Days = Enum.GetValues<DayOfWeek>()
-                .Select(d => new DaySchedule
-                {
-                    Day = d,
-                    Enabled = false
-                })
-                .ToList();
+                               .Select(d => new DaySchedule
+                               {
+                                   Day = d,
+                                   Enabled = false,
+                                   From = new TimeSpan(9, 0, 0),
+                                   To = new TimeSpan(17, 0, 0)
+                               })
+                               .ToList();
         }
 
         _config.BankHolidays ??= new List<DateOnly>();
-    
         _loading = false;
     }
+    private static readonly Converter<TimeSpan?> _timeSpanConverter =
+    new Converter<TimeSpan?>
+    {
+        SetFunc = v => v?.ToString(@"hh\:mm") ?? string.Empty,
+
+        GetFunc = s => TimeSpan.TryParse(s, out var ts) ? ts : null
+    };
+
     private void AddHoliday()
     {
         if (_newHolidayDate is null)
@@ -248,17 +274,16 @@
     }
 
     private void RemoveHoliday(DateOnly d)
-    {
-        _config.BankHolidays.Remove(d);
-    }
-    private void ValidateEmail(FocusEventArgs _)
+        => _config.BankHolidays.Remove(d);
+
+    private void ValidateEmail(FocusEventArgs args)
     {
         if (string.IsNullOrWhiteSpace(_pharmacy?.Email))
             return;
 
         try
         {
-            new System.Net.Mail.MailAddress(_pharmacy!.Email);
+           var _ = new System.Net.Mail.MailAddress(_pharmacy!.Email);
         }
         catch
         {
@@ -294,11 +319,15 @@
 
     private async Task Save()
     {
-        if (_pharmacy == null)
+        if (_pharmacy is null)
         {
             Snackbar.Add("Pharmacy not found.", Severity.Error);
             return;
         }
+
+        await _form!.Validate();
+        if (!_form.IsValid)
+            return;
 
         if (string.IsNullOrWhiteSpace(_pharmacy.Name))
         {
@@ -309,7 +338,9 @@
         try
         {
             _saving = true;
-            _pharmacy.WorkingHoursJson = JsonSerializer.Serialize(_config);
+
+            _pharmacy.WorkingHoursJson = JsonSerializer.Serialize(_config, _jsonOptions);
+
             Db.Pharmacies.Update(_pharmacy);
             await Db.SaveChangesAsync();
 
