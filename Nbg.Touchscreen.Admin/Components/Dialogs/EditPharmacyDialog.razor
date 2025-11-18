@@ -3,6 +3,7 @@
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Data
 @using Microsoft.EntityFrameworkCore
+@using System.Text.Json;
 @inject AppDbContext Db
 @inject ISnackbar Snackbar
 
@@ -105,8 +106,54 @@
                         }
                     }
                 </MudSelect>
+                                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Working hours</MudText>
 
+                @foreach (var day in _config.Days)
+                {
+                    <MudStack Row="true" Class="mb-2" AlignItems="AlignItems.Center">
+                        <MudCheckBox T="bool"
+                                     @bind-Checked="day.Enabled"
+                                     Label="@day.Day.ToString()" />
 
+                        <MudTimePicker @bind-Time="day.From"
+                                       Label="από"
+                                       Disabled="!day.Enabled"
+                                       Class="ml-4"
+                                       AmPm="false" />
+
+                        <MudTimePicker @bind-Time="day.To"
+                                       Label="έως"
+                                       Disabled="!day.Enabled"
+                                       Class="ml-2"
+                                       AmPm="false" />
+                    </MudStack>
+                }
+
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Bank holidays</MudText>
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+                    <MudDatePicker @bind-Date="_newHolidayDate"
+                                   Label="Add bank holiday"
+                                   DateFormat="dd/MM/yyyy" />
+                    <MudButton Class="ml-2"
+                               Variant="Variant.Outlined"
+                               OnClick="AddHoliday">
+                        Add
+                    </MudButton>
+                </MudStack>
+                <MudChipSet T="DateOnly">
+                    @foreach (var d in _config.BankHolidays)
+                    {
+                        <MudChip T="DateOnly"
+                                 Value="d"
+                                 Closeable="true"
+                                 OnClose="@(() => RemoveHoliday(d))">
+                            @d.ToString("dd/MM/yyyy")
+                        </MudChip>
+                    }
+                </MudChipSet>
             </MudForm>
         }
     </DialogContent>
@@ -129,7 +176,7 @@
 @code {
     [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
     [Parameter] public int PharmacyId { get; set; }
-
+    
     private MudForm? _form;
     private Pharmacy? _pharmacy;
     private bool _loading = true;
@@ -139,6 +186,9 @@
 
     private string? _longitude;
     private string? _latitude;
+
+    private WorkingHoursConfig _config = new();
+    private DateTime? _newHolidayDate;
 
     protected override async Task OnInitializedAsync()
     {
@@ -155,10 +205,52 @@
             _longitude = _pharmacy.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
             _latitude = _pharmacy.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
+        // ---------- WorkingHoursJson LOAD ----------
+        if (!string.IsNullOrWhiteSpace(_pharmacy.WorkingHoursJson))
+        {
+            try
+            {
+                _config = JsonSerializer.Deserialize<WorkingHoursConfig>(_pharmacy.WorkingHoursJson!)
+                          ?? new WorkingHoursConfig();
+            }
+            catch
+            {
+                _config = new WorkingHoursConfig();
+            }
+        }
 
+        // Αν δεν υπάρχουν Days, φτιάξε default entries για όλη την εβδομάδα
+        if (_config.Days == null || _config.Days.Count == 0)
+        {
+            _config.Days = Enum.GetValues<DayOfWeek>()
+                .Select(d => new DaySchedule
+                {
+                    Day = d,
+                    Enabled = false
+                })
+                .ToList();
+        }
+
+        _config.BankHolidays ??= new List<DateOnly>();
+    
         _loading = false;
     }
+    private void AddHoliday()
+    {
+        if (_newHolidayDate is null)
+            return;
 
+        var d = DateOnly.FromDateTime(_newHolidayDate.Value.Date);
+        if (!_config.BankHolidays.Contains(d))
+            _config.BankHolidays.Add(d);
+
+        _newHolidayDate = null;
+    }
+
+    private void RemoveHoliday(DateOnly d)
+    {
+        _config.BankHolidays.Remove(d);
+    }
     private void ValidateEmail(FocusEventArgs _)
     {
         if (string.IsNullOrWhiteSpace(_pharmacy?.Email))
@@ -217,7 +309,7 @@
         try
         {
             _saving = true;
-
+            _pharmacy.WorkingHoursJson = JsonSerializer.Serialize(_config);
             Db.Pharmacies.Update(_pharmacy);
             await Db.SaveChangesAsync();
 
