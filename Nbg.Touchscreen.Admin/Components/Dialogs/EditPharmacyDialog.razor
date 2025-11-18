@@ -48,7 +48,7 @@
                 </MudGrid>
 
                 <MudDivider Class="my-4" />
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Owner & Contact</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Owner &amp; Contact</MudText>
 
                 <MudGrid Gutter="Gutter.None">
                     <MudItem xs="12" sm="6">
@@ -101,10 +101,11 @@
                     {
                         @foreach (var s in _services)
                         {
-                            <MudSelectItem Value="s.Id">@s.Name</MudSelectItem>
+                            <MudSelectItem T="int?" Value="@s.Id">@s.Name</MudSelectItem>
                         }
                     }
                 </MudSelect>
+
 
             </MudForm>
         }
@@ -134,16 +135,13 @@
     private bool _loading = true;
     private bool _saving = false;
 
-    // Dropdown services
     private List<Service>? _services;
 
-    // Τοπογραφικά ως string για εύκολο validation/parse
     private string? _longitude;
     private string? _latitude;
 
     protected override async Task OnInitializedAsync()
     {
-        // Φόρτωσε Pharmacy
         _pharmacy = await Db.Pharmacies
             .FirstOrDefaultAsync(p => p.Id == PharmacyId);
 
@@ -152,7 +150,6 @@
             .OrderBy(s => s.Name)
             .ToListAsync();
 
-        // Prefill lon/lat text
         if (_pharmacy != null)
         {
             _longitude = _pharmacy.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -169,7 +166,7 @@
 
         try
         {
-            var addr = new System.Net.Mail.MailAddress(_pharmacy!.Email);
+            new System.Net.Mail.MailAddress(_pharmacy!.Email);
         }
         catch
         {
@@ -180,7 +177,9 @@
     private void TryApplyLongitude(FocusEventArgs _)
     {
         if (_pharmacy is null) return;
-        if (double.TryParse(_longitude, System.Globalization.NumberStyles.Float,
+
+        if (double.TryParse(_longitude,
+                            System.Globalization.NumberStyles.Float,
                             System.Globalization.CultureInfo.InvariantCulture,
                             out var val))
             _pharmacy.Longitude = val;
@@ -191,7 +190,9 @@
     private void TryApplyLatitude(FocusEventArgs _)
     {
         if (_pharmacy is null) return;
-        if (double.TryParse(_latitude, System.Globalization.NumberStyles.Float,
+
+        if (double.TryParse(_latitude,
+                            System.Globalization.NumberStyles.Float,
                             System.Globalization.CultureInfo.InvariantCulture,
                             out var val))
             _pharmacy.Latitude = val;
@@ -217,7 +218,6 @@
         {
             _saving = true;
 
-            // αν είναι tracked απλά SaveChanges, αλλιώς Update
             Db.Pharmacies.Update(_pharmacy);
             await Db.SaveChangesAsync();
 

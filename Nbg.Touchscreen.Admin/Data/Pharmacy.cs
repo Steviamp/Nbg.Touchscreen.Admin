@@ -11,10 +11,14 @@
         public string? OwnerName { get; set; }
         public string? Email { get; set; }
         public string? Phone { get; set; }
-        public double? Latitude { get; set; }   // 23.68756
-        public double? Longitude { get; set; }  // 37.94736
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
         public int? ServiceId { get; set; }
         public Service? Service { get; set; }
+        public string? PharmacyIP { get; set; }
+        public int? Port { get; set; }
+        public string? WorkingHoursJson { get; set; }
+        public string? TicketingRulesJson { get; set; }
         public DateTime CreatedAtUtc { get; set; }
     }
 }

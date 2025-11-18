@@ -1,0 +1,202 @@
+﻿@page "/services"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Data
+@using Nbg.Touchscreen.Admin.Components.Dialogs
+
+@inject AppDbContext Db
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-6">
+    <MudText Typo="Typo.h4" Class="mb-4">Services</MudText>
+
+    <MudPaper Class="pa-0 mt-4">
+        <MudTable T="Service"
+                  @ref="_table"
+                  ServerData="LoadServerData"
+                  RowsPerPage="10"
+                  Hover="true"
+                  Dense="true"
+                  Bordered="false"
+                  Striped="true">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.subtitle2">@($"{_totalItems} services")</MudText>
+                <MudSpacer />
+                <AuthorizeView>
+                    <Authorized>
+                        <MudButton Color="Color.Inherit"
+                                   Variant="Variant.Outlined"
+                                   Class="ml-2"
+                                   OnClick="OpenCreateService">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-1" />
+                            Create service
+                        </MudButton>
+                    </Authorized>
+                </AuthorizeView>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh><MudText Style="font-weight:900; font-size:1.05rem;">Service Name</MudText></MudTh>
+                <MudTh><MudText Style="font-weight:900; font-size:1.05rem;">Service IP</MudText></MudTh>
+                <MudTh><MudText Style="font-weight:900; font-size:1.05rem;">Service Port</MudText></MudTh>
+                <MudTh><MudText Style="font-weight:900; font-size:1.05rem;">Actions</MudText></MudTh>
+            </HeaderContent>
+
+            <RowTemplate Context="s">
+                <MudTd DataLabel="Service Name">@s.Name</MudTd>
+                <MudTd DataLabel="Service IP">@s.Ip</MudTd>
+                <MudTd DataLabel="Service Port">@s.Port</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   OnClick="@(() => OpenEditService(s))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   Class="ml-1"
+                                   OnClick="@(() => DeleteService(s))" />
+                </MudTd>
+            </RowTemplate>
+
+            <NoRecordsContent>
+                <MudText Class="pa-4">No services found.</MudText>
+            </NoRecordsContent>
+
+        </MudTable>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudTable<Service>? _table;
+    private int _totalItems;
+    private string _search = "";
+
+    private async Task<TableData<Service>> LoadServerData(TableState state, CancellationToken token)
+    {
+        IQueryable<Service> query = Db.Services.AsNoTracking();
+
+        query = query.Where(s => s.IsActive);
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var s = _search.Trim().ToLower();
+            query = query.Where(x =>
+                (x.Name ?? "").ToLower().Contains(s) ||
+                (x.Ip ?? "").ToLower().Contains(s));
+        }
+
+        _totalItems = await query.CountAsync(token);
+
+        query = state.SortLabel switch
+        {
+            "Name" => state.SortDirection == SortDirection.Ascending
+                ? query.OrderBy(x => x.Name)
+                : query.OrderByDescending(x => x.Name),
+            _ => query.OrderBy(x => x.Id)
+        };
+
+        var items = await query
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync(token);
+
+        return new TableData<Service>
+        {
+            TotalItems = _totalItems,
+            Items = items
+        };
+    }
+
+    private async Task OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && _table is not null)
+            await _table.ReloadServerData();
+    }
+
+    private async Task OpenCreateService()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var dialogRef = await Dialogs.ShowAsync<CreateServiceDialog>("Add new Service", options: options);
+        var result = await dialogRef.Result;
+
+        if (!result.Canceled && _table != null)
+        {
+            await _table.ReloadServerData();
+            Snackbar.Add("Service created.", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditService(Service service)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var parameters = new DialogParameters
+        {
+            { "ServiceId", service.Id }
+        };
+
+        var dialogRef = await Dialogs.ShowAsync<EditServiceDialog>("Edit Service", parameters, options);
+        var result = await dialogRef.Result;
+
+        if (!result.Canceled && _table != null)
+        {
+            await _table.ReloadServerData();
+            Snackbar.Add("Service updated.", Severity.Success);
+        }
+    }
+
+    private async Task DeleteService(Service service)
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small
+        };
+
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Delete service '{service.Name}' ?" },
+            { "ButtonText", "Delete" },
+            { "Color", Color.Error }
+        };
+
+        var dialogRef = await Dialogs.ShowAsync<ConfirmDialog>("Delete Service", parameters, options);
+        var result = await dialogRef.Result;
+
+        if (result.Canceled) return;
+
+        try
+        {
+            Db.Services.Remove(service);
+
+            await Db.SaveChangesAsync();
+            Snackbar.Add("Service deleted.", Severity.Success);
+
+            if (_table != null)
+                await _table.ReloadServerData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting service: {ex.Message}", Severity.Error);
+        }
+    }
+}
+

@@ -10,6 +10,7 @@ namespace Nbg.Touchscreen.Admin.Data
         public DbSet<Pharmacy> Pharmacies { get; set; } = default!;
         public DbSet<Service> Services { get; set; } = default!;
         public DbSet<Queue> Queues { get; set; } = default!;
+        public DbSet<AppSetting> AppSettings { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -23,6 +24,21 @@ namespace Nbg.Touchscreen.Admin.Data
                 e.Property(x => x.Email).HasMaxLength(256).IsRequired();
                 e.Property(x => x.Password).HasMaxLength(200).IsRequired();
                 e.Property(x => x.Role).HasMaxLength(20).IsRequired();
+            });
+
+            builder.Entity<Queue>(e =>
+            {
+                e.ToTable("Queues");
+
+                e.HasOne(q => q.Service)
+                 .WithMany(s => s.Queues)
+                 .HasForeignKey(q => q.ServiceId)
+                 .OnDelete(DeleteBehavior.Restrict); 
+            });
+
+            builder.Entity<Service>(e =>
+            {
+                e.ToTable("Services");
             });
         }
     }

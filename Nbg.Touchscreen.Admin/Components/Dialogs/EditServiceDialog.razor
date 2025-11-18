@@ -1,0 +1,182 @@
+﻿@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Data
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+        }
+        else if (_service is null)
+        {
+            <MudAlert Severity="Severity.Error">Service not found.</MudAlert>
+        }
+        else
+        {
+            <MudForm @ref="_form">
+                <MudTextField @bind-Value="_service!.Name"
+                              Label="Service Name"
+                              Required="true"
+                              Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="_service!.Ip"
+                              Label="Service IP"
+                              Required="true"
+                              Variant="Variant.Outlined"
+                              Class="mt-3" />
+
+                <MudNumericField @bind-Value="_service!.Port"
+                                 Label="Service Port"
+                                 Required="true"
+                                 Variant="Variant.Outlined"
+                                 Class="mt-3" />
+
+                <!-- Queue dropdown -->
+                <MudSelect T="int?" Label="Select Queue"
+                           @bind-Value="_queueId"
+                           Variant="Variant.Outlined"
+                           Class="mt-3">
+                    <MudSelectItem T="int?" Value="@((int?)null)">– none –</MudSelectItem>
+                    @foreach (var q in _queues)
+                    {
+                        <MudSelectItem T="int?" Value="@q.Id">@q.Name</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Active days</MudText>
+
+                <MudStack Row="true" Spacing="2">
+                    <MudCheckBox T="bool" @bind-Checked="_service!.Monday" Label="Mon" />
+                    <MudCheckBox T="bool" @bind-Checked="_service!.Tuesday" Label="Tue" />
+                    <MudCheckBox T="bool" @bind-Checked="_service!.Wednesday" Label="Wed" />
+                    <MudCheckBox T="bool" @bind-Checked="_service!.Thursday" Label="Thu" />
+                    <MudCheckBox T="bool" @bind-Checked="_service!.Friday" Label="Fri" />
+                    <MudCheckBox T="bool" @bind-Checked="_service!.Saturday" Label="Sat" />
+                    <MudCheckBox T="bool" @bind-Checked="_service!.Sunday" Label="Sun" />
+                </MudStack>
+
+                <MudCheckBox T="bool"
+                             @bind-Checked="_service!.IsActive"
+                             Label="Active"
+                             Class="mt-3" />
+            </MudForm>
+        }
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@(_saving || _service is null)"
+                   OnClick="Save">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
+    [Parameter] public int ServiceId { get; set; }
+
+    private MudForm? _form;
+    private Service? _service;
+    private bool _loading = true;
+    private bool _saving;
+
+    // ουρές & επιλεγμένη ουρά
+    private List<Queue> _queues = new();
+    private int? _queueId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Φόρτωσε το service
+        _service = await Db.Services
+            .FirstOrDefaultAsync(x => x.Id == ServiceId);
+
+        // Φόρτωσε όλες τις ουρές
+        _queues = await Db.Queues
+            .OrderBy(q => q.Name)
+            .ToListAsync();
+
+        // Βρες αν κάποια ουρά είναι ήδη δεμένη με αυτό το service
+        if (_service != null)
+        {
+            var currentQueue = _queues.FirstOrDefault(q => q.ServiceId == _service.Id);
+            _queueId = currentQueue?.Id;
+        }
+
+        _loading = false;
+    }
+
+    private async Task Save()
+    {
+        if (_service is null || _saving) return;
+        if (_form is null) return;
+
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        if (_service.Port <= 0)
+        {
+            Snackbar.Add("Port must be a positive number.", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            _saving = true;
+
+            // Ενημέρωση service
+            Db.Services.Update(_service);
+
+            // 1) καθάρισε τυχόν ουρές που ήταν δεμένες σε αυτό το service
+            var queuesWithThisService = await Db.Queues
+                .Where(q => q.ServiceId == _service.Id)
+                .ToListAsync();
+
+            foreach (var q in queuesWithThisService)
+            {
+                q.ServiceId = null;
+            }
+
+            // 2) αν έχει επιλεγεί νέα ουρά, δέσε την
+            if (_queueId.HasValue)
+            {
+                var newQueue = await Db.Queues
+                    .FirstOrDefaultAsync(q => q.Id == _queueId.Value);
+
+                if (newQueue != null)
+                {
+                    newQueue.ServiceId = _service.Id;
+                }
+            }
+
+            await Db.SaveChangesAsync();
+
+            Snackbar.Add("Service updated.", Severity.Success);
+            DialogInstance?.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving service: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

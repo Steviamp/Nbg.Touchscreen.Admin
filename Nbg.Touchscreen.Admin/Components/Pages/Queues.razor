@@ -23,7 +23,6 @@
                 <MudTextField @bind-Value="_search" Placeholder="Search name…" Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true"
                               OnKeyDown="OnSearchKey" Class="mr-2" />
-                <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="_table!.ReloadServerData" />
                 <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" Class="ml-2"
                            OnClick="OpenCreate">Create</MudButton>
             </ToolBarContent>

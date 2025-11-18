@@ -1,0 +1,158 @@
+﻿@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Data
+@inject AppDbContext Db
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_name"
+                          Label="Service Name"
+                          Required="true"
+                          Variant="Variant.Outlined" />
+
+            <MudTextField @bind-Value="_ip"
+                          Label="Service IP"
+                          Required="true"
+                          Variant="Variant.Outlined"
+                          Class="mt-3" />
+
+            <MudNumericField @bind-Value="_port"
+                             Label="Service Port"
+                             Required="true"
+                             Variant="Variant.Outlined"
+                             Class="mt-3" />
+
+            <!-- Queue dropdown -->
+            <MudSelect T="int?" Label="Select Queue"
+                       @bind-Value="_queueId"
+                       Variant="Variant.Outlined"
+                       Class="mt-3">
+                <MudSelectItem T="int?" Value="@((int?)null)">– none –</MudSelectItem>
+                @foreach (var q in _queues)
+                {
+                    <MudSelectItem T="int?" Value="@q.Id">@q.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Active days</MudText>
+
+            <MudStack Row="true" Spacing="2">
+                <MudCheckBox T="bool" @bind-Checked="_monday" Label="Mon" />
+                <MudCheckBox T="bool" @bind-Checked="_tuesday" Label="Tue" />
+                <MudCheckBox T="bool" @bind-Checked="_wednesday" Label="Wed" />
+                <MudCheckBox T="bool" @bind-Checked="_thursday" Label="Thu" />
+                <MudCheckBox T="bool" @bind-Checked="_friday" Label="Fri" />
+                <MudCheckBox T="bool" @bind-Checked="_saturday" Label="Sat" />
+                <MudCheckBox T="bool" @bind-Checked="_sunday" Label="Sun" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@_saving"
+                   OnClick="Save">
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
+
+    private MudForm? _form;
+    private bool _saving;
+
+    private string _name = string.Empty;
+    private string _ip = string.Empty;
+    private int? _port;
+
+    private bool _monday = true;
+    private bool _tuesday = true;
+    private bool _wednesday = true;
+    private bool _thursday = true;
+    private bool _friday = true;
+    private bool _saturday;
+    private bool _sunday;
+
+    private int? _queueId;
+    private List<Queue> _queues = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _queues = await Db.Queues
+            .OrderBy(q => q.Name)
+            .ToListAsync();
+    }
+
+    private async Task Save()
+    {
+        if (_saving) return;
+        if (_form is null) return;
+
+        await _form.Validate();
+        if (!_form.IsValid)
+            return;
+
+        if (_port is null || _port <= 0)
+        {
+            Snackbar.Add("Port must be a positive number.", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            _saving = true;
+
+            var s = new Service
+            {
+                Name = _name.Trim(),
+                Ip = _ip.Trim(),
+                Port = _port.Value,
+                Monday = _monday,
+                Tuesday = _tuesday,
+                Wednesday = _wednesday,
+                Thursday = _thursday,
+                Friday = _friday,
+                Saturday = _saturday,
+                Sunday = _sunday,
+                IsActive = true
+            };
+
+            Db.Services.Add(s);
+            await Db.SaveChangesAsync();
+
+            if (_queueId.HasValue)
+            {
+                var q = await Db.Queues.FirstOrDefaultAsync(x => x.Id == _queueId.Value);
+                if (q != null)
+                {
+                    q.ServiceId = s.Id;
+                    await Db.SaveChangesAsync();
+                }
+            }
+
+            Snackbar.Add("Service created.", Severity.Success);
+            DialogInstance?.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating service: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

@@ -15,10 +15,8 @@
         public bool Saturday { get; set; }
         public bool Sunday { get; set; }
 
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; }
 
         public ICollection<Queue> Queues { get; set; } = new List<Queue>();
     }
-
 }
-

@@ -1,0 +1,105 @@
+﻿@page "/settings"
+@attribute [Authorize(Roles = "Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using Nbg.Touchscreen.Admin.Data
+
+@inject AppDbContext Db
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-6">
+    <MudText Typo="Typo.h3" Class="mb-6">Settings</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
+    else
+    {
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">
+                Max Number Of Tickets Allowed Per Day
+            </MudText>
+
+            <MudGrid Gutter="Gutter.None">
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="int"
+                               Label="Max tickets per day"
+                               @bind-Value="_maxTickets"
+                               Disabled="_saving">
+                        @foreach (var v in _options)
+                        {
+                            <MudSelectItem Value="@v">@v</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="4" Class="d-flex align-center mt-3 mt-sm-0">
+                    <MudButton Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               Disabled="_saving"
+                               OnClick="SaveAsync">
+                        @if (_saving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Save
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private bool _loading = true;
+    private bool _saving;
+    private int _maxTickets;
+    private int _settingsId = 1;
+
+    private readonly int[] _options = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var row = await Db.AppSettings.FirstOrDefaultAsync(s => s.Id == 1);
+
+        if (row == null)
+        {
+            row = new AppSetting
+            {
+                Id = 1,
+                MaxTicketsPerDay = 5
+            };
+            Db.AppSettings.Add(row);
+            await Db.SaveChangesAsync();
+        }
+
+        _settingsId = row.Id;
+        _maxTickets = row.MaxTicketsPerDay;
+        _loading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+
+        try
+        {
+            var row = await Db.AppSettings.FirstAsync(s => s.Id == _settingsId);
+            row.MaxTicketsPerDay = _maxTickets;
+            await Db.SaveChangesAsync();
+
+            Snackbar.Add("Settings saved successfully.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving settings: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
+
