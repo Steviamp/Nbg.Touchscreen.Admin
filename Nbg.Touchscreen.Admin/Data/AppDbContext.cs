@@ -26,16 +26,6 @@ namespace Nbg.Touchscreen.Admin.Data
                 e.Property(x => x.Role).HasMaxLength(20).IsRequired();
             });
 
-            builder.Entity<Queue>(e =>
-            {
-                e.ToTable("Queues");
-
-                e.HasOne(q => q.Service)
-                 .WithMany(s => s.Queues)
-                 .HasForeignKey(q => q.ServiceId)
-                 .OnDelete(DeleteBehavior.Restrict); 
-            });
-
             builder.Entity<Service>(e =>
             {
                 e.ToTable("Services");

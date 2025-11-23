@@ -20,8 +20,8 @@
         {
             <MudForm @ref="_form">
                 <MudTextField @bind-Value="_queue.Name" Label="Queue name" Required="true" Variant="Variant.Outlined" />
-                <MudSelect T="int?" Label="Service" @bind-Value="_queue.ServiceId" Variant="Variant.Outlined" Class="mt-3">
-                    <MudSelectItem T="int?" Value="@((int?)null)">– none –</MudSelectItem>
+                <MudSelect T="string?" Label="Service" @bind-Value="_queue.ServiceType" Variant="Variant.Outlined" Class="mt-3">
+                    <MudSelectItem T="string?" Value="@((string?)null)">– none –</MudSelectItem>
                     @foreach (var s in _services)
                     {
                         <MudSelectItem T="int?" Value="@((int?)s.Id)">@s.Name (@s.Ip:@s.Port)</MudSelectItem>

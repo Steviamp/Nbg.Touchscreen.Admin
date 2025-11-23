@@ -1,4 +1,5 @@
 ﻿@attribute [Authorize]
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.EntityFrameworkCore
@@ -32,7 +33,7 @@
                               Variant="Variant.Outlined"
                               Class="mt-3" />
 
-                <MudGrid Class="mt-3" Gutter="Gutter.None">
+                <MudGrid Class="mt-3" Spacing="2">
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="_pharmacy.City"
                                       Label="City"
@@ -53,7 +54,7 @@
                 <MudDivider Class="my-4" />
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Owner &amp; contact</MudText>
 
-                <MudGrid Gutter="Gutter.None">
+                <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="_pharmacy.OwnerName"
                                       Label="Owner name"
@@ -66,7 +67,7 @@
                                       Immediate="true"
                                       OnBlur="ValidateEmail" />
                     </MudItem>
-                    <MudItem xs="12" sm="6" Class="mt-3">
+                    <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="_pharmacy.Phone"
                                       Label="Phone"
                                       Variant="Variant.Outlined" />
@@ -76,7 +77,7 @@
                 <MudDivider Class="my-4" />
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Location</MudText>
 
-                <MudGrid Gutter="Gutter.None">
+                <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="_longitude"
                                       Label="Longitude"
@@ -100,168 +101,223 @@
                            Label="Select service"
                            @bind-Value="_pharmacy.ServiceId"
                            Variant="Variant.Outlined">
+                    <MudSelectItem T="int?" Value="@((int?)null)">— none —</MudSelectItem>
                     @foreach (var s in _services)
                     {
                         <MudSelectItem T="int?" Value="@s.Id">@s.Name</MudSelectItem>
                     }
                 </MudSelect>
 
-                <!-- Ωράρια -->
+                <!-- Ωράρια με HTML checkboxes -->
                 <MudDivider Class="my-4" />
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Working hours</MudText>
 
                 <!-- Monday -->
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
-                    <MudCheckBox T="bool" @bind-Checked="_pharmacy.MondayEnabled"
-                                 Label="Monday" />
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_mondayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _mondayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Monday</span>
+                    </label>
 
-                    <MudTimePicker @bind-Time="_pharmacy.MondayFrom"
+                    <MudTimePicker @bind-Time="_mondayFrom"
                                    Label="από"
-                                   Disabled="!_pharmacy.MondayEnabled"
-                                   Class="ml-4"
-                                   AmPm="false" />
+                                   Disabled="!_mondayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_pharmacy.MondayTo"
+                    <MudTimePicker @bind-Time="_mondayTo"
                                    Label="έως"
-                                   Disabled="!_pharmacy.MondayEnabled"
-                                   Class="ml-2"
-                                   AmPm="false" />
-                </MudStack>
+                                   Disabled="!_mondayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
 
                 <!-- Tuesday -->
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
-                    <MudCheckBox T="bool" @bind-Checked="_pharmacy.TuesdayEnabled"
-                                 Label="Tuesday" />
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_tuesdayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _tuesdayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Tuesday</span>
+                    </label>
 
-                    <MudTimePicker @bind-Time="_pharmacy.TuesdayFrom"
+                    <MudTimePicker @bind-Time="_tuesdayFrom"
                                    Label="από"
-                                   Disabled="!_pharmacy.TuesdayEnabled"
-                                   Class="ml-4"
-                                   AmPm="false" />
+                                   Disabled="!_tuesdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_pharmacy.TuesdayTo"
+                    <MudTimePicker @bind-Time="_tuesdayTo"
                                    Label="έως"
-                                   Disabled="!_pharmacy.TuesdayEnabled"
-                                   Class="ml-2"
-                                   AmPm="false" />
-                </MudStack>
+                                   Disabled="!_tuesdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
 
                 <!-- Wednesday -->
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
-                    <MudCheckBox T="bool" @bind-Checked="_pharmacy.WednesdayEnabled"
-                                 Label="Wednesday" />
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_wednesdayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _wednesdayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Wednesday</span>
+                    </label>
 
-                    <MudTimePicker @bind-Time="_pharmacy.WednesdayFrom"
+                    <MudTimePicker @bind-Time="_wednesdayFrom"
                                    Label="από"
-                                   Disabled="!_pharmacy.WednesdayEnabled"
-                                   Class="ml-4"
-                                   AmPm="false" />
+                                   Disabled="!_wednesdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_pharmacy.WednesdayTo"
+                    <MudTimePicker @bind-Time="_wednesdayTo"
                                    Label="έως"
-                                   Disabled="!_pharmacy.WednesdayEnabled"
-                                   Class="ml-2"
-                                   AmPm="false" />
-                </MudStack>
+                                   Disabled="!_wednesdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
 
                 <!-- Thursday -->
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
-                    <MudCheckBox T="bool" @bind-Checked="_pharmacy.ThursdayEnabled"
-                                 Label="Thursday" />
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_thursdayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _thursdayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Thursday</span>
+                    </label>
 
-                    <MudTimePicker @bind-Time="_pharmacy.ThursdayFrom"
+                    <MudTimePicker @bind-Time="_thursdayFrom"
                                    Label="από"
-                                   Disabled="!_pharmacy.ThursdayEnabled"
-                                   Class="ml-4"
-                                   AmPm="false" />
+                                   Disabled="!_thursdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_pharmacy.ThursdayTo"
+                    <MudTimePicker @bind-Time="_thursdayTo"
                                    Label="έως"
-                                   Disabled="!_pharmacy.ThursdayEnabled"
-                                   Class="ml-2"
-                                   AmPm="false" />
-                </MudStack>
+                                   Disabled="!_thursdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
 
                 <!-- Friday -->
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
-                    <MudCheckBox T="bool" @bind-Checked="_pharmacy.FridayEnabled"
-                                 Label="Friday" />
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_fridayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _fridayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Friday</span>
+                    </label>
 
-                    <MudTimePicker @bind-Time="_pharmacy.FridayFrom"
+                    <MudTimePicker @bind-Time="_fridayFrom"
                                    Label="από"
-                                   Disabled="!_pharmacy.FridayEnabled"
-                                   Class="ml-4"
-                                   AmPm="false" />
+                                   Disabled="!_fridayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_pharmacy.FridayTo"
+                    <MudTimePicker @bind-Time="_fridayTo"
                                    Label="έως"
-                                   Disabled="!_pharmacy.FridayEnabled"
-                                   Class="ml-2"
-                                   AmPm="false" />
-                </MudStack>
+                                   Disabled="!_fridayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
 
                 <!-- Saturday -->
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
-                    <MudCheckBox T="bool" @bind-Checked="_pharmacy.SaturdayEnabled"
-                                 Label="Saturday" />
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_saturdayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _saturdayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Saturday</span>
+                    </label>
 
-                    <MudTimePicker @bind-Time="_pharmacy.SaturdayFrom"
+                    <MudTimePicker @bind-Time="_saturdayFrom"
                                    Label="από"
-                                   Disabled="!_pharmacy.SaturdayEnabled"
-                                   Class="ml-4"
-                                   AmPm="false" />
+                                   Disabled="!_saturdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_pharmacy.SaturdayTo"
+                    <MudTimePicker @bind-Time="_saturdayTo"
                                    Label="έως"
-                                   Disabled="!_pharmacy.SaturdayEnabled"
-                                   Class="ml-2"
-                                   AmPm="false" />
-                </MudStack>
+                                   Disabled="!_saturdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
 
                 <!-- Sunday -->
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
-                    <MudCheckBox T="bool" @bind-Checked="_pharmacy.SundayEnabled"
-                                 Label="Sunday" />
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_sundayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _sundayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Sunday</span>
+                    </label>
 
-                    <MudTimePicker @bind-Time="_pharmacy.SundayFrom"
+                    <MudTimePicker @bind-Time="_sundayFrom"
                                    Label="από"
-                                   Disabled="!_pharmacy.SundayEnabled"
-                                   Class="ml-4"
-                                   AmPm="false" />
+                                   Disabled="!_sundayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_pharmacy.SundayTo"
+                    <MudTimePicker @bind-Time="_sundayTo"
                                    Label="έως"
-                                   Disabled="!_pharmacy.SundayEnabled"
-                                   Class="ml-2"
-                                   AmPm="false" />
-                </MudStack>
+                                   Disabled="!_sundayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
 
                 <!-- Αργίες -->
                 <MudDivider Class="my-4" />
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Bank holidays</MudText>
 
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2" Spacing="2">
                     <MudDatePicker @bind-Date="_newHolidayDate"
                                    Label="Add bank holiday"
-                                   DateFormat="dd/MM/yyyy" />
-                    <MudButton Class="ml-2"
-                               Variant="Variant.Outlined"
-                               OnClick="AddHoliday">
+                                   DateFormat="dd/MM/yyyy"
+                                   Variant="Variant.Outlined"
+                                   Class="flex-grow-1" />
+                    <MudButton Variant="Variant.Outlined"
+                               OnClick="AddHoliday"
+                               Style="min-width: 80px;">
                         Add
                     </MudButton>
                 </MudStack>
 
-                <MudChipSet T="DateOnly">
-                    @foreach (var d in _bankHolidays.OrderBy(d => d))
-                    {
-                        <MudChip T="DateOnly"
-                                 Value="d"
-                                 Closeable="true"
-                                 OnClose="@(() => RemoveHoliday(d))">
-                            @d.ToString("dd/MM/yyyy")
-                        </MudChip>
-                    }
-                </MudChipSet>
+                @if (_bankHolidays.Any())
+                {
+                    <MudChipSet T="DateOnly">
+                        @foreach (var d in _bankHolidays.OrderBy(d => d))
+                        {
+                            <MudChip T="DateOnly"
+                                     Value="d"
+                                     Closeable="true"
+                                     OnClose="@(() => RemoveHoliday(d))">
+                                @d.ToString("dd/MM/yyyy")
+                            </MudChip>
+                        }
+                    </MudChipSet>
+                }
             </MudForm>
         }
     </DialogContent>
@@ -302,6 +358,35 @@
     private DateTime? _newHolidayDate;
     private List<DateOnly> _bankHolidays = new();
 
+    // Local variables για working hours
+    private bool _mondayEnabled;
+    private TimeSpan? _mondayFrom;
+    private TimeSpan? _mondayTo;
+
+    private bool _tuesdayEnabled;
+    private TimeSpan? _tuesdayFrom;
+    private TimeSpan? _tuesdayTo;
+
+    private bool _wednesdayEnabled;
+    private TimeSpan? _wednesdayFrom;
+    private TimeSpan? _wednesdayTo;
+
+    private bool _thursdayEnabled;
+    private TimeSpan? _thursdayFrom;
+    private TimeSpan? _thursdayTo;
+
+    private bool _fridayEnabled;
+    private TimeSpan? _fridayFrom;
+    private TimeSpan? _fridayTo;
+
+    private bool _saturdayEnabled;
+    private TimeSpan? _saturdayFrom;
+    private TimeSpan? _saturdayTo;
+
+    private bool _sundayEnabled;
+    private TimeSpan? _sundayFrom;
+    private TimeSpan? _sundayTo;
+
     protected override async Task OnInitializedAsync()
     {
         _pharmacy = await Db.Pharmacies.FirstOrDefaultAsync(p => p.Id == PharmacyId);
@@ -313,9 +398,38 @@
         if (_pharmacy is not null)
         {
             _longitude = _pharmacy.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            _latitude  = _pharmacy.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _latitude = _pharmacy.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-            // Φόρτωμα bank holidays από JSON
+            // Load working hours
+            _mondayEnabled = _pharmacy.MondayEnabled;
+            _mondayFrom = _pharmacy.MondayFrom;
+            _mondayTo = _pharmacy.MondayTo;
+
+            _tuesdayEnabled = _pharmacy.TuesdayEnabled;
+            _tuesdayFrom = _pharmacy.TuesdayFrom;
+            _tuesdayTo = _pharmacy.TuesdayTo;
+
+            _wednesdayEnabled = _pharmacy.WednesdayEnabled;
+            _wednesdayFrom = _pharmacy.WednesdayFrom;
+            _wednesdayTo = _pharmacy.WednesdayTo;
+
+            _thursdayEnabled = _pharmacy.ThursdayEnabled;
+            _thursdayFrom = _pharmacy.ThursdayFrom;
+            _thursdayTo = _pharmacy.ThursdayTo;
+
+            _fridayEnabled = _pharmacy.FridayEnabled;
+            _fridayFrom = _pharmacy.FridayFrom;
+            _fridayTo = _pharmacy.FridayTo;
+
+            _saturdayEnabled = _pharmacy.SaturdayEnabled;
+            _saturdayFrom = _pharmacy.SaturdayFrom;
+            _saturdayTo = _pharmacy.SaturdayTo;
+
+            _sundayEnabled = _pharmacy.SundayEnabled;
+            _sundayFrom = _pharmacy.SundayFrom;
+            _sundayTo = _pharmacy.SundayTo;
+
+            // Load bank holidays
             if (!string.IsNullOrWhiteSpace(_pharmacy.BankHolidaysJson))
             {
                 try
@@ -411,13 +525,42 @@
         {
             _saving = true;
 
-            // σώζουμε τις αργίες σε JSON
+            // Copy from local variables to entity
+            _pharmacy.MondayEnabled = _mondayEnabled;
+            _pharmacy.MondayFrom = _mondayFrom;
+            _pharmacy.MondayTo = _mondayTo;
+
+            _pharmacy.TuesdayEnabled = _tuesdayEnabled;
+            _pharmacy.TuesdayFrom = _tuesdayFrom;
+            _pharmacy.TuesdayTo = _tuesdayTo;
+
+            _pharmacy.WednesdayEnabled = _wednesdayEnabled;
+            _pharmacy.WednesdayFrom = _wednesdayFrom;
+            _pharmacy.WednesdayTo = _wednesdayTo;
+
+            _pharmacy.ThursdayEnabled = _thursdayEnabled;
+            _pharmacy.ThursdayFrom = _thursdayFrom;
+            _pharmacy.ThursdayTo = _thursdayTo;
+
+            _pharmacy.FridayEnabled = _fridayEnabled;
+            _pharmacy.FridayFrom = _fridayFrom;
+            _pharmacy.FridayTo = _fridayTo;
+
+            _pharmacy.SaturdayEnabled = _saturdayEnabled;
+            _pharmacy.SaturdayFrom = _saturdayFrom;
+            _pharmacy.SaturdayTo = _saturdayTo;
+
+            _pharmacy.SundayEnabled = _sundayEnabled;
+            _pharmacy.SundayFrom = _sundayFrom;
+            _pharmacy.SundayTo = _sundayTo;
+
+            // Save bank holidays
             _pharmacy.BankHolidaysJson = JsonSerializer.Serialize(_bankHolidays);
 
             Db.Pharmacies.Update(_pharmacy);
             await Db.SaveChangesAsync();
 
-            Snackbar.Add("Pharmacy updated.", Severity.Success);
+            Snackbar.Add("Pharmacy updated successfully.", Severity.Success);
             DialogInstance?.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)

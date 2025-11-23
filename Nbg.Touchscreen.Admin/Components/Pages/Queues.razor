@@ -35,7 +35,7 @@
 
             <RowTemplate>
                 <MudTd DataLabel="Queue Name">@context.Name</MudTd>
-                <MudTd DataLabel="Service">@(context.Service?.Name ?? "-")</MudTd>
+                <MudTd DataLabel="Service">@(context.ServiceType)</MudTd>
                 <MudTd>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(()=>OpenEdit(context.Id))" />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
@@ -57,13 +57,13 @@
 
     private async Task<TableData<Queue>> LoadServerData(TableState state, CancellationToken token)
     {
-        IQueryable<Queue> q = Db.Queues.AsNoTracking().Include(x => x.Service);
+        IQueryable<Queue> q = Db.Queues.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(_search))
         {
             var s = _search.Trim().ToLower();
             q = q.Where(x => x.Name.ToLower().Contains(s)
-                          || (x.Service != null && x.Service.Name.ToLower().Contains(s)));
+                          || (x.ServiceType != null && x.ServiceType.ToLower().Contains(s)));
         }
 
         _totalItems = await q.CountAsync(token);

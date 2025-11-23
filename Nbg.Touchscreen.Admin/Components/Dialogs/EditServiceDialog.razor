@@ -3,6 +3,7 @@
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Data
 @using Microsoft.EntityFrameworkCore
+@using System.Text.Json
 @inject AppDbContext Db
 @inject ISnackbar Snackbar
 
@@ -48,23 +49,223 @@
                     }
                 </MudSelect>
 
+                <!-- Working hours for ticket issuing -->
                 <MudDivider Class="my-4" />
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Active days</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Working hours (ticket issuing)</MudText>
 
-                <MudStack Row="true" Spacing="2">
-                    <MudCheckBox T="bool" @bind-Checked="_service!.Monday" Label="Mon" />
-                    <MudCheckBox T="bool" @bind-Checked="_service!.Tuesday" Label="Tue" />
-                    <MudCheckBox T="bool" @bind-Checked="_service!.Wednesday" Label="Wed" />
-                    <MudCheckBox T="bool" @bind-Checked="_service!.Thursday" Label="Thu" />
-                    <MudCheckBox T="bool" @bind-Checked="_service!.Friday" Label="Fri" />
-                    <MudCheckBox T="bool" @bind-Checked="_service!.Saturday" Label="Sat" />
-                    <MudCheckBox T="bool" @bind-Checked="_service!.Sunday" Label="Sun" />
+                <!-- Monday -->
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_mondayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _mondayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Monday</span>
+                    </label>
+
+                    <MudTimePicker @bind-Time="_mondayFrom"
+                                   Label="από"
+                                   Disabled="!_mondayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+
+                    <MudTimePicker @bind-Time="_mondayTo"
+                                   Label="έως"
+                                   Disabled="!_mondayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
+
+                <!-- Tuesday -->
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_tuesdayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _tuesdayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Tuesday</span>
+                    </label>
+
+                    <MudTimePicker @bind-Time="_tuesdayFrom"
+                                   Label="από"
+                                   Disabled="!_tuesdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+
+                    <MudTimePicker @bind-Time="_tuesdayTo"
+                                   Label="έως"
+                                   Disabled="!_tuesdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
+
+                <!-- Wednesday -->
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_wednesdayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _wednesdayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Wednesday</span>
+                    </label>
+
+                    <MudTimePicker @bind-Time="_wednesdayFrom"
+                                   Label="από"
+                                   Disabled="!_wednesdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+
+                    <MudTimePicker @bind-Time="_wednesdayTo"
+                                   Label="έως"
+                                   Disabled="!_wednesdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
+
+                <!-- Thursday -->
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_thursdayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _thursdayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Thursday</span>
+                    </label>
+
+                    <MudTimePicker @bind-Time="_thursdayFrom"
+                                   Label="από"
+                                   Disabled="!_thursdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+
+                    <MudTimePicker @bind-Time="_thursdayTo"
+                                   Label="έως"
+                                   Disabled="!_thursdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
+
+                <!-- Friday -->
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_fridayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _fridayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Friday</span>
+                    </label>
+
+                    <MudTimePicker @bind-Time="_fridayFrom"
+                                   Label="από"
+                                   Disabled="!_fridayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+
+                    <MudTimePicker @bind-Time="_fridayTo"
+                                   Label="έως"
+                                   Disabled="!_fridayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
+
+                <!-- Saturday -->
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_saturdayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _saturdayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Saturday</span>
+                    </label>
+
+                    <MudTimePicker @bind-Time="_saturdayFrom"
+                                   Label="από"
+                                   Disabled="!_saturdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+
+                    <MudTimePicker @bind-Time="_saturdayTo"
+                                   Label="έως"
+                                   Disabled="!_saturdayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
+
+                <!-- Sunday -->
+                <div class="d-flex align-center mb-3" style="gap: 12px;">
+                    <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
+                        <input type="checkbox"
+                               checked="@_sundayEnabled"
+                               @onchange="@((ChangeEventArgs e) => _sundayEnabled = (bool)e.Value!)"
+                               style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;" />
+                        <span>Sunday</span>
+                    </label>
+
+                    <MudTimePicker @bind-Time="_sundayFrom"
+                                   Label="από"
+                                   Disabled="!_sundayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+
+                    <MudTimePicker @bind-Time="_sundayTo"
+                                   Label="έως"
+                                   Disabled="!_sundayEnabled"
+                                   AmPm="false"
+                                   Variant="Variant.Outlined"
+                                   Style="flex: 1;" />
+                </div>
+
+                <!-- Bank holidays -->
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Bank holidays (no ticket issuing)</MudText>
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2" Spacing="2">
+                    <MudDatePicker @bind-Date="_newHolidayDate"
+                                   Label="Add bank holiday"
+                                   DateFormat="dd/MM/yyyy"
+                                   Variant="Variant.Outlined"
+                                   Class="flex-grow-1" />
+                    <MudButton Variant="Variant.Outlined"
+                               OnClick="AddHoliday"
+                               Style="min-width: 80px;">
+                        Add
+                    </MudButton>
                 </MudStack>
+
+                @if (_bankHolidays.Any())
+                {
+                    <MudChipSet T="DateOnly">
+                        @foreach (var d in _bankHolidays.OrderBy(d => d))
+                        {
+                            <MudChip T="DateOnly"
+                                     Value="d"
+                                     Closeable="true"
+                                     OnClose="@(() => RemoveHoliday(d))">
+                                @d.ToString("dd/MM/yyyy")
+                            </MudChip>
+                        }
+                    </MudChipSet>
+                }
+
+                <MudDivider Class="my-4" />
 
                 <MudCheckBox T="bool"
                              @bind-Checked="_service!.IsActive"
                              Label="Active"
-                             Class="mt-3" />
+                             Class="mt-1" />
             </MudForm>
         }
     </DialogContent>
@@ -99,6 +300,38 @@
     private List<Queue> _queues = new();
     private int? _queueId;
 
+    // working hours locals
+    private bool _mondayEnabled;
+    private TimeSpan? _mondayFrom;
+    private TimeSpan? _mondayTo;
+
+    private bool _tuesdayEnabled;
+    private TimeSpan? _tuesdayFrom;
+    private TimeSpan? _tuesdayTo;
+
+    private bool _wednesdayEnabled;
+    private TimeSpan? _wednesdayFrom;
+    private TimeSpan? _wednesdayTo;
+
+    private bool _thursdayEnabled;
+    private TimeSpan? _thursdayFrom;
+    private TimeSpan? _thursdayTo;
+
+    private bool _fridayEnabled;
+    private TimeSpan? _fridayFrom;
+    private TimeSpan? _fridayTo;
+
+    private bool _saturdayEnabled;
+    private TimeSpan? _saturdayFrom;
+    private TimeSpan? _saturdayTo;
+
+    private bool _sundayEnabled;
+    private TimeSpan? _sundayFrom;
+    private TimeSpan? _sundayTo;
+
+    private DateTime? _newHolidayDate;
+    private List<DateOnly> _bankHolidays = new();
+
     protected override async Task OnInitializedAsync()
     {
         _service = await Db.Services
@@ -110,12 +343,70 @@
 
         if (_service != null)
         {
-            var currentQueue = _queues.FirstOrDefault(q => q.ServiceId == _service.Id);
+            var currentQueue = _queues.FirstOrDefault(q => q.ServiceType == _service.Type);
             _queueId = currentQueue?.Id;
+
+            // Load working hours from entity
+            _mondayEnabled = _service.MondayEnabled;
+            _mondayFrom = _service.MondayFrom;
+            _mondayTo = _service.MondayTo;
+
+            _tuesdayEnabled = _service.TuesdayEnabled;
+            _tuesdayFrom = _service.TuesdayFrom;
+            _tuesdayTo = _service.TuesdayTo;
+
+            _wednesdayEnabled = _service.WednesdayEnabled;
+            _wednesdayFrom = _service.WednesdayFrom;
+            _wednesdayTo = _service.WednesdayTo;
+
+            _thursdayEnabled = _service.ThursdayEnabled;
+            _thursdayFrom = _service.ThursdayFrom;
+            _thursdayTo = _service.ThursdayTo;
+
+            _fridayEnabled = _service.FridayEnabled;
+            _fridayFrom = _service.FridayFrom;
+            _fridayTo = _service.FridayTo;
+
+            _saturdayEnabled = _service.SaturdayEnabled;
+            _saturdayFrom = _service.SaturdayFrom;
+            _saturdayTo = _service.SaturdayTo;
+
+            _sundayEnabled = _service.SundayEnabled;
+            _sundayFrom = _service.SundayFrom;
+            _sundayTo = _service.SundayTo;
+
+            // Load bank holidays
+            if (!string.IsNullOrWhiteSpace(_service.BankHolidaysJson))
+            {
+                try
+                {
+                    _bankHolidays = JsonSerializer.Deserialize<List<DateOnly>>(_service.BankHolidaysJson!)
+                                   ?? new List<DateOnly>();
+                }
+                catch
+                {
+                    _bankHolidays = new List<DateOnly>();
+                }
+            }
         }
 
         _loading = false;
     }
+
+    private void AddHoliday()
+    {
+        if (_newHolidayDate is null)
+            return;
+
+        var d = DateOnly.FromDateTime(_newHolidayDate.Value.Date);
+        if (!_bankHolidays.Contains(d))
+            _bankHolidays.Add(d);
+
+        _newHolidayDate = null;
+    }
+
+    private void RemoveHoliday(DateOnly d)
+        => _bankHolidays.Remove(d);
 
     private async Task Save()
     {
@@ -136,15 +427,48 @@
         {
             _saving = true;
 
+            // Copy working hours locals back to entity
+            _service.MondayEnabled = _mondayEnabled;
+            _service.MondayFrom = _mondayFrom;
+            _service.MondayTo = _mondayTo;
+
+            _service.TuesdayEnabled = _tuesdayEnabled;
+            _service.TuesdayFrom = _tuesdayFrom;
+            _service.TuesdayTo = _tuesdayTo;
+
+            _service.WednesdayEnabled = _wednesdayEnabled;
+            _service.WednesdayFrom = _wednesdayFrom;
+            _service.WednesdayTo = _wednesdayTo;
+
+            _service.ThursdayEnabled = _thursdayEnabled;
+            _service.ThursdayFrom = _thursdayFrom;
+            _service.ThursdayTo = _thursdayTo;
+
+            _service.FridayEnabled = _fridayEnabled;
+            _service.FridayFrom = _fridayFrom;
+            _service.FridayTo = _fridayTo;
+
+            _service.SaturdayEnabled = _saturdayEnabled;
+            _service.SaturdayFrom = _saturdayFrom;
+            _service.SaturdayTo = _saturdayTo;
+
+            _service.SundayEnabled = _sundayEnabled;
+            _service.SundayFrom = _sundayFrom;
+            _service.SundayTo = _sundayTo;
+
+            // Save bank holidays
+            _service.BankHolidaysJson = JsonSerializer.Serialize(_bankHolidays);
+
             Db.Services.Update(_service);
 
+            // Queue mapping (1 service -> 0/1 queue)
             var queuesWithThisService = await Db.Queues
-                .Where(q => q.ServiceId == _service.Id)
+                .Where(q => q.ServiceType == _service.Type)
                 .ToListAsync();
 
             foreach (var q in queuesWithThisService)
             {
-                q.ServiceId = null;
+                q.ServiceType = null;
             }
 
             if (_queueId.HasValue)
@@ -154,12 +478,11 @@
 
                 if (newQueue != null)
                 {
-                    newQueue.ServiceId = _service.Id;
+                    newQueue.ServiceType = _service.Type;
                 }
             }
 
             await Db.SaveChangesAsync();
-            Snackbar.Add($"DEBUG: Mon={_service.Monday}, Tue={_service.Tuesday}", Severity.Info);
             Snackbar.Add("Service updated.", Severity.Success);
             DialogInstance?.Close(DialogResult.Ok(true));
         }
