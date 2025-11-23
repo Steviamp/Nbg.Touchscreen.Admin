@@ -61,12 +61,23 @@
 
         if (!string.IsNullOrWhiteSpace(_search))
         {
-            var s = _search.Trim().ToLower();
-            q = q.Where(x => x.Name.ToLower().Contains(s)
-                          || (x.ServiceType != null && x.ServiceType.ToLower().Contains(s)));
+            var s = _search.Trim().ToLowerInvariant();
+
+            if (int.TryParse(_search.Trim(), out var st))
+            {
+                q = q.Where(x =>
+                    x.Name.ToLower().Contains(s) ||
+                    (x.ServiceType.HasValue && x.ServiceType.Value == st)
+                );
+            }
+            else
+            {
+                q = q.Where(x => x.Name.ToLower().Contains(s));
+            }
         }
 
         _totalItems = await q.CountAsync(token);
+
         q = q.OrderByDescending(x => x.CreatedAtUtc)
              .Skip(state.Page * state.PageSize)
              .Take(state.PageSize);

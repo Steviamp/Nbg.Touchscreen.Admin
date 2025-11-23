@@ -1,8 +1,8 @@
 ﻿@attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Data
-@using Microsoft.EntityFrameworkCore
 @using System.Text.Json
 @inject AppDbContext Db
 @inject ISnackbar Snackbar
@@ -31,13 +31,13 @@
                               Variant="Variant.Outlined"
                               Class="mt-3" />
 
-                <MudNumericField @bind-Value="_service!.Port"
+                <MudNumericField T="int" @bind-Value="_service!.Port"
                                  Label="Service Port"
                                  Required="true"
                                  Variant="Variant.Outlined"
                                  Class="mt-3" />
 
-                <!-- Queue dropdown -->
+                <!-- Queue dropdown (πολλά services -> 1 queue) -->
                 <MudSelect T="int?" Label="Select Queue"
                            @bind-Value="_queueId"
                            Variant="Variant.Outlined"
@@ -334,8 +334,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _service = await Db.Services
-            .FirstOrDefaultAsync(x => x.Id == ServiceId);
+        _service = await Db.Services.FirstOrDefaultAsync(x => x.Id == ServiceId);
 
         _queues = await Db.Queues
             .OrderBy(q => q.Name)
@@ -343,8 +342,7 @@
 
         if (_service != null)
         {
-            var currentQueue = _queues.FirstOrDefault(q => q.ServiceType == _service.QueueId);
-            _queueId = currentQueue?.Id;
+            _queueId = _service.QueueId;
 
             // Load working hours from entity
             _mondayEnabled = _service.MondayEnabled;
@@ -381,7 +379,7 @@
                 try
                 {
                     _bankHolidays = JsonSerializer.Deserialize<List<DateOnly>>(_service.BankHolidaysJson!)
-                                   ?? new List<DateOnly>();
+                                    ?? new List<DateOnly>();
                 }
                 catch
                 {
@@ -395,8 +393,7 @@
 
     private void AddHoliday()
     {
-        if (_newHolidayDate is null)
-            return;
+        if (_newHolidayDate is null) return;
 
         var d = DateOnly.FromDateTime(_newHolidayDate.Value.Date);
         if (!_bankHolidays.Contains(d))
@@ -405,8 +402,7 @@
         _newHolidayDate = null;
     }
 
-    private void RemoveHoliday(DateOnly d)
-        => _bankHolidays.Remove(d);
+    private void RemoveHoliday(DateOnly d) => _bankHolidays.Remove(d);
 
     private async Task Save()
     {
@@ -414,8 +410,7 @@
         if (_form is null) return;
 
         await _form.Validate();
-        if (!_form.IsValid)
-            return;
+        if (!_form.IsValid) return;
 
         if (_service.Port <= 0)
         {
@@ -459,30 +454,11 @@
             // Save bank holidays
             _service.BankHolidaysJson = JsonSerializer.Serialize(_bankHolidays);
 
-            Db.Services.Update(_service);
-
-            // Queue mapping (1 service -> 0/1 queue)
-            var queuesWithThisService = await Db.Queues
-                .Where(q => q.ServiceType == _service.QueueId)
-                .ToListAsync();
-
-            foreach (var q in queuesWithThisService)
-            {
-                q.ServiceType = null;
-            }
-
-            if (_queueId.HasValue)
-            {
-                var newQueue = await Db.Queues
-                    .FirstOrDefaultAsync(q => q.Id == _queueId.Value);
-
-                if (newQueue != null)
-                {
-                    newQueue.ServiceType = _service.QueueId;
-                }
-            }
+            // 🔗 Δέσιμο με ουρά (πολλά services → 1 queue)
+            _service.QueueId = _queueId;
 
             await Db.SaveChangesAsync();
+
             Snackbar.Add("Service updated.", Severity.Success);
             DialogInstance?.Close(DialogResult.Ok(true));
         }

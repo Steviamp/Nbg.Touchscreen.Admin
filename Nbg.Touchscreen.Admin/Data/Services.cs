@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; } = default!;
-        public int QueueId { get; set; }
+        public int? QueueId { get; set; }
         public string Ip { get; set; } = default!;
         public int Port { get; set; }
 
@@ -39,6 +39,5 @@
 
         public string? BankHolidaysJson { get; set; }
 
-        public ICollection<Queue> Queues { get; set; } = new List<Queue>();
     }
 }

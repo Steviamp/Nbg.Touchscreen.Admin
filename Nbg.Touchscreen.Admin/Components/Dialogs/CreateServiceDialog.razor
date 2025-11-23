@@ -449,12 +449,7 @@
 
             if (_queueId.HasValue)
             {
-                var q = await Db.Queues.FirstOrDefaultAsync(x => x.Id == _queueId.Value);
-                if (q != null)
-                {
-                    q.ServiceType = s.QueueId;
-                    await Db.SaveChangesAsync();
-                }
+                s.QueueId = _queueId.Value;
             }
 
             Snackbar.Add("Service created.", Severity.Success);
