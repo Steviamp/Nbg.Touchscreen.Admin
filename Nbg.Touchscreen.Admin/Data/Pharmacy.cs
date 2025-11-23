@@ -46,6 +46,7 @@
         public TimeSpan? SundayFrom { get; set; }
         public TimeSpan? SundayTo { get; set; }
         public string? BankHolidaysJson { get; set; }
-
+        public int? PrefectureId { get; set; }
+        public Prefecture? Prefecture { get; set; }
     }
 }

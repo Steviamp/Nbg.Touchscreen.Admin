@@ -11,6 +11,7 @@ namespace Nbg.Touchscreen.Admin.Data
         public DbSet<Service> Services { get; set; } = default!;
         public DbSet<Queue> Queues { get; set; } = default!;
         public DbSet<AppSetting> AppSettings { get; set; } = default!;
+        public DbSet<Prefecture> Prefectures => Set<Prefecture>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

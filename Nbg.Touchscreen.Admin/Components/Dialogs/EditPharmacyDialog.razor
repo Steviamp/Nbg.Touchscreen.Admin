@@ -40,9 +40,13 @@
                                       Variant="Variant.Outlined" />
                     </MudItem>
                     <MudItem xs="12" sm="3">
-                        <MudTextField @bind-Value="_pharmacy.State"
-                                      Label="State"
-                                      Variant="Variant.Outlined" />
+                        <MudSelect T="int?" Label="Νομός" @bind-Value="_pharmacy.PrefectureId"
+                                   Variant="Variant.Outlined" Dense="true" Clearable="true" Searchable="true">
+                            @foreach (var p in _prefectures)
+                            {
+                                <MudSelectItem T="int?" Value="@p.Id">@p.NameEl</MudSelectItem>
+                            }
+                        </MudSelect>
                     </MudItem>
                     <MudItem xs="12" sm="3">
                         <MudTextField @bind-Value="_pharmacy.ZipCode"
@@ -344,6 +348,7 @@
 @code {
     [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
     [Parameter] public int PharmacyId { get; set; }
+    private List<Prefecture> _prefectures = new();
 
     private MudForm? _form;
     private Pharmacy? _pharmacy;
@@ -394,6 +399,11 @@
             .Where(s => s.IsActive)
             .OrderBy(s => s.Name)
             .ToListAsync();
+
+        _prefectures = await Db.Prefectures
+        .Where(p => p.IsActive)
+        .OrderBy(p => p.NameEl)
+        .ToListAsync();
 
         if (_pharmacy is not null)
         {

@@ -454,7 +454,6 @@
             // Save bank holidays
             _service.BankHolidaysJson = JsonSerializer.Serialize(_bankHolidays);
 
-            // 🔗 Δέσιμο με ουρά (πολλά services → 1 queue)
             _service.QueueId = _queueId;
 
             await Db.SaveChangesAsync();

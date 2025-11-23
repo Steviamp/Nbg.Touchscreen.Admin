@@ -30,10 +30,13 @@
                               Label="City"
                               Variant="Variant.Outlined"
                               Class="mt-3" />
-                <MudTextField @bind-Value="_state"
-                              Label="State"
-                              Variant="Variant.Outlined"
-                              Class="mt-3" />
+                <MudSelect T="int?" Label="Νομός" @bind-Value="_prefectureId"
+                           Variant="Variant.Outlined" Dense="true" Clearable="true" Searchable="true" Class="mt-3">
+                    @foreach (var p in _prefectures)
+                    {
+                        <MudSelectItem T="int?" Value="@p.Id">@p.NameEl</MudSelectItem>
+                    }
+                </MudSelect>
                 <MudTextField @bind-Value="_zip"
                               Label="ZipCode"
                               Variant="Variant.Outlined"
@@ -322,6 +325,7 @@
     private string _name = "";
     private string? _address;
     private string? _city;
+    private int? _prefectureId;
     private string? _state;
     private string? _zip;
     private string? _ownerName;
@@ -332,6 +336,7 @@
     private int _serviceId;
 
     private List<Service> _services = new();
+    private List<Prefecture> _prefectures = new();
 
     // working hours locals
     private bool _mondayEnabled;
@@ -371,6 +376,11 @@
         _services = await Db.Services
             .OrderBy(s => s.Name)
             .ToListAsync();
+
+        _prefectures = await Db.Prefectures
+        .AsNoTracking().Where(p => p.IsActive)
+        .OrderBy(p => p.NameEl)
+        .ToListAsync();
 
         // προαιρετικά default ωράρια (π.χ. 09:00–17:00 disabled)
         var defaultFrom = new TimeSpan(8, 0, 0);
@@ -464,6 +474,7 @@
                 Name = _name.Trim(),
                 Address = _address?.Trim(),
                 City = _city?.Trim(),
+                PrefectureId = _prefectureId,
                 State = _state?.Trim(),
                 ZipCode = _zip?.Trim(),
                 OwnerName = _ownerName?.Trim(),
