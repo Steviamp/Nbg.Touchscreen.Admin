@@ -19,21 +19,33 @@
         else
         {
             <MudForm @ref="_form">
-                <MudTextField @bind-Value="_queue.Name" Label="Queue name" Required="true" Variant="Variant.Outlined" />
-                <MudSelect T="string?" Label="Service" @bind-Value="_queue.ServiceType" Variant="Variant.Outlined" Class="mt-3">
-                    <MudSelectItem T="string?" Value="@((string?)null)">– none –</MudSelectItem>
+                <MudTextField @bind-Value="_queue.Name"
+                              Label="Queue name"
+                              Required="true"
+                              Variant="Variant.Outlined" />
+
+                <MudSelect T="int?" Label="Service" @bind-Value="_queue.ServiceType" Variant="Variant.Outlined" Class="mt-3">
+                    <MudSelectItem T="int?" Value="@((int?)null)">– none –</MudSelectItem>
                     @foreach (var s in _services)
                     {
-                        <MudSelectItem T="int?" Value="@((int?)s.Id)">@s.Name (@s.Ip:@s.Port)</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@s.Id">@s.Name (@s.Ip:@s.Port)</MudSelectItem>
                     }
                 </MudSelect>
+
+                <MudCheckBox T="bool"
+                             @bind-Checked="_queue.IsActive"
+                             Label="Active"
+                             Class="mt-3" />
             </MudForm>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(()=>DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save" Disabled="@_saving">
-            @if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+            @if (_saving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
             Save
         </MudButton>
     </DialogActions>
@@ -51,15 +63,28 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _services = await Db.Services.AsNoTracking().OrderBy(s => s.Name).ToListAsync();
+        _services = await Db.Services
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.Name)
+            .ToListAsync();
+
         _queue = await Db.Queues.FirstOrDefaultAsync(x => x.Id == QueueId);
         _loading = false;
     }
 
     private async Task Save()
     {
-        if (_queue is null) { Snackbar.Add("Queue not found.", Severity.Error); return; }
-        if (string.IsNullOrWhiteSpace(_queue.Name)) { Snackbar.Add("Name required", Severity.Error); return; }
+        if (_queue is null)
+        {
+            Snackbar.Add("Queue not found.", Severity.Error);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_queue.Name))
+        {
+            Snackbar.Add("Name required", Severity.Error);
+            return;
+        }
 
         _saving = true;
         try
@@ -69,8 +94,12 @@
             DialogInstance?.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
-        { Snackbar.Add($"Error saving queue: {ex.Message}", Severity.Error); }
-        finally { _saving = false; }
+        {
+            Snackbar.Add($"Error saving queue: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 }
-

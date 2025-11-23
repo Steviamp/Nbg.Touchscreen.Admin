@@ -343,7 +343,7 @@
 
         if (_service != null)
         {
-            var currentQueue = _queues.FirstOrDefault(q => q.ServiceType == _service.Type);
+            var currentQueue = _queues.FirstOrDefault(q => q.ServiceType == _service.QueueId);
             _queueId = currentQueue?.Id;
 
             // Load working hours from entity
@@ -463,7 +463,7 @@
 
             // Queue mapping (1 service -> 0/1 queue)
             var queuesWithThisService = await Db.Queues
-                .Where(q => q.ServiceType == _service.Type)
+                .Where(q => q.ServiceType == _service.QueueId)
                 .ToListAsync();
 
             foreach (var q in queuesWithThisService)
@@ -478,7 +478,7 @@
 
                 if (newQueue != null)
                 {
-                    newQueue.ServiceType = _service.Type;
+                    newQueue.ServiceType = _service.QueueId;
                 }
             }
 

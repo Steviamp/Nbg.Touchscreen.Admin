@@ -39,23 +39,15 @@
 
     private MudForm? _form;
     private string _name = string.Empty;
-    private string? _serviceType = string.Empty;
+    private int? _serviceType;
     private bool _isActive = true;
     private bool _saving;
 
-    // Δεν χρειάζεται πλέον OnInitializedAsync/Db.Services
 
     private async Task Save()
     {
-        // Lightweight validation
         if (string.IsNullOrWhiteSpace(_name))
         { Snackbar.Add("Name required", Severity.Error); return; }
-
-        if (string.IsNullOrWhiteSpace(_serviceType))
-        { Snackbar.Add("Service Type required", Severity.Error); return; }
-
-        if (_serviceType!.Length > 20)
-        { Snackbar.Add("Service Type must be ≤ 20 chars.", Severity.Error); return; }
 
         _saving = true;
         try
@@ -63,7 +55,7 @@
             var ent = new Queue
             {
                 Name = _name.Trim(),
-                ServiceType = _serviceType.Trim(),
+                ServiceType = _serviceType,
                 IsActive = _isActive,
                 CreatedAtUtc = DateTime.UtcNow
             };

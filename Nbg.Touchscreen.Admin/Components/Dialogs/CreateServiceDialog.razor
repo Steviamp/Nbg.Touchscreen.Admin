@@ -452,7 +452,7 @@
                 var q = await Db.Queues.FirstOrDefaultAsync(x => x.Id == _queueId.Value);
                 if (q != null)
                 {
-                    q.ServiceType = s.Type;
+                    q.ServiceType = s.QueueId;
                     await Db.SaveChangesAsync();
                 }
             }

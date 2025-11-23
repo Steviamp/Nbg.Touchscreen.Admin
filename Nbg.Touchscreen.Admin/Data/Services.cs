@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; } = default!;
-        public string Type { get; set; } = "";
+        public int QueueId { get; set; }
         public string Ip { get; set; } = default!;
         public int Port { get; set; }
 
