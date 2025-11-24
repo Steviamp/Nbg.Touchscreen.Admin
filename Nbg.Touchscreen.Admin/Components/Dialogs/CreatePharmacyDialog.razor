@@ -82,6 +82,14 @@
                         <MudSelectItem Value="@s.Id">@s.Name (@s.Ip:@s.Port)</MudSelectItem>
                     }
                 </MudSelect>
+                <MudSelect T="TicketingProvider" Label="Ticketing provider"
+                           @bind-Value="_ticketingProvider"
+                           Variant="Variant.Outlined" Class="mt-3">
+                    <MudSelectItem T="TicketingProvider" Value="TicketingProvider.None">— none —</MudSelectItem>
+                    <MudSelectItem T="TicketingProvider" Value="TicketingProvider.NemoQ">NemoQ</MudSelectItem>
+                    <MudSelectItem T="TicketingProvider" Value="TicketingProvider.Ready">Ready</MudSelectItem>
+                    <MudSelectItem T="TicketingProvider" Value="TicketingProvider.Sedco">SEDCO</MudSelectItem>
+                </MudSelect>
 
                 <!-- Ωράρια -->
                 <MudDivider Class="my-4" />
@@ -334,6 +342,7 @@
     private string? _latitude;
     private string? _longitude;
     private int _serviceId;
+    private TicketingProvider _ticketingProvider = TicketingProvider.None;
 
     private List<Service> _services = new();
     private List<Prefecture> _prefectures = new();
@@ -482,6 +491,7 @@
                 Phone = _phone?.Trim(),
                 CreatedAtUtc = DateTime.UtcNow,
                 ServiceId = _serviceId == 0 ? null : _serviceId,
+                TicketingProvider = _ticketingProvider,
 
                 Latitude = ParseNullableDouble(_latitude),
                 Longitude = ParseNullableDouble(_longitude),
