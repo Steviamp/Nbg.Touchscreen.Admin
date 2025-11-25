@@ -13,8 +13,7 @@
         public string? Phone { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
-        public int? ServiceId { get; set; }
-        public Service? Service { get; set; }
+        public ICollection<Service> Services { get; set; } = new List<Service>();
         public string? PharmacyIP { get; set; }
         public int? Port { get; set; }
         public DateTime CreatedAtUtc { get; set; }

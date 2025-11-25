@@ -26,7 +26,15 @@
                              Required="true"
                              Variant="Variant.Outlined"
                              Class="mt-3" />
-
+            <MudSelect T="int" Label="Select Pharmacy"
+                       @bind-Value="_pharmacyId"
+                       Variant="Variant.Outlined"
+                       Class="mt-3">
+                @foreach (var p in _pharmacies)
+                {
+                    <MudSelectItem T="int" Value="@p.Id">@p.Name</MudSelectItem>
+                }
+            </MudSelect>
             <!-- Queue dropdown -->
             <MudSelect T="int?" Label="Select Queue"
                        @bind-Value="_queueId"
@@ -288,6 +296,8 @@
 
     private int? _queueId;
     private List<Queue> _queues = new();
+    private int _pharmacyId;
+    private List<Pharmacy> _pharmacies = new();
 
     // working hours locals
     private bool _mondayEnabled;
@@ -325,6 +335,10 @@
     {
         _queues = await Db.Queues
             .OrderBy(q => q.Name)
+            .ToListAsync();
+
+        _pharmacies = await Db.Pharmacies
+            .OrderBy(p => p.Name)
             .ToListAsync();
 
         // default ωράριο (9–17, disabled)
@@ -411,6 +425,7 @@
                 Name = _name.Trim(),
                 Ip = _ip.Trim(),
                 Port = _port.Value,
+                PharmacyId = _pharmacyId,
                 IsActive = _isActive,
 
                 MondayEnabled = _mondayEnabled,

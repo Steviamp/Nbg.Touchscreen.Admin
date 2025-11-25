@@ -73,15 +73,21 @@
 
                 <MudDivider Class="my-4" />
 
-                <MudText Typo="Typo.subtitle1" Class="mb-2">Service</MudText>
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Services</MudText>
 
-                <MudSelect T="int" Label="Select Service" @bind-Value="_serviceId" Variant="Variant.Outlined" Class="mt-1">
-                    <MudSelectItem Value="0">– none –</MudSelectItem>
+                <MudSelect T="int" Label="Select services" Variant="Variant.Outlined" MultiSelection="true"
+                           @bind-SelectedValues="_serviceIdsEnumerable"
+                           ToStringFunc="@(id => _services.FirstOrDefault(s => s.Id == id)?.Name ?? id.ToString())"
+                           Class="mt-1">
                     @foreach (var s in _services)
                     {
-                        <MudSelectItem Value="@s.Id">@s.Name (@s.Ip:@s.Port)</MudSelectItem>
+                        var takenByOther = s.PharmacyId != null;
+                        <MudSelectItem T="int" Value="@s.Id" Disabled="@takenByOther">
+                            @s.Name (@s.Ip:@s.Port) @((takenByOther ? " (assigned)" : ""))
+                        </MudSelectItem>
                     }
                 </MudSelect>
+
                 <MudSelect T="TicketingProvider" Label="Ticketing provider"
                            @bind-Value="_ticketingProvider"
                            Variant="Variant.Outlined" Class="mt-3">
@@ -113,7 +119,7 @@
 @code {
     [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
 
-    private MudForm? _form;
+    private MudForm? _form = null!;
 
     private bool _loading = true;
     private bool _saving = false;
@@ -130,11 +136,18 @@
     private string? _phone;
     private string? _latitude;
     private string? _longitude;
-    private int _serviceId;
+    private HashSet<int> _serviceIds = new();
     private TicketingProvider _ticketingProvider = TicketingProvider.None;
 
     private List<Service> _services = new();
     private List<Prefecture> _prefectures = new();
+
+    // Property to satisfy MudSelect's IEnumerable<int> requirement
+    private IEnumerable<int> _serviceIdsEnumerable
+    {
+        get => _serviceIds;
+        set => _serviceIds = value?.ToHashSet() ?? new HashSet<int>();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -199,7 +212,6 @@
                 Email = _email?.Trim(),
                 Phone = _phone?.Trim(),
                 CreatedAtUtc = DateTime.UtcNow,
-                ServiceId = _serviceId == 0 ? null : _serviceId,
                 TicketingProvider = _ticketingProvider,
 
                 Latitude = ParseNullableDouble(_latitude),
@@ -208,6 +220,21 @@
 
             Db.Pharmacies.Add(ent);
             await Db.SaveChangesAsync();
+
+            // Assign selected services to the new pharmacy
+            if (_serviceIds.Count > 0)
+            {
+                var servicesToAssign = await Db.Services
+                    .Where(s => _serviceIds.Contains(s.Id))
+                    .ToListAsync();
+
+                foreach (var service in servicesToAssign)
+                {
+                    service.PharmacyId = ent.Id;
+                }
+
+                await Db.SaveChangesAsync();
+            }
 
             Snackbar.Add("Pharmacy created.", Severity.Success);
             DialogInstance?.Close(DialogResult.Ok(true));

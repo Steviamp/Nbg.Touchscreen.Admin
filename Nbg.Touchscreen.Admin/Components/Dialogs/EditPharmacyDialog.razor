@@ -22,26 +22,17 @@
         else
         {
             <MudForm @ref="_form">
-                <!-- Βασικά στοιχεία -->
-                <MudTextField @bind-Value="_pharmacy.Name"
-                              Label="Name"
-                              Required="true"
-                              Variant="Variant.Outlined" />
+                <!-- Basic Info -->
+                <MudTextField @bind-Value="_pharmacy.Name" Label="Name" Required="true" Variant="Variant.Outlined" />
 
-                <MudTextField @bind-Value="_pharmacy.Address"
-                              Label="Address"
-                              Variant="Variant.Outlined"
-                              Class="mt-3" />
+                <MudTextField @bind-Value="_pharmacy.Address" Label="Address" Variant="Variant.Outlined" Class="mt-3" />
 
                 <MudGrid Class="mt-3" Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_pharmacy.City"
-                                      Label="City"
-                                      Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="_pharmacy.City" Label="City" Variant="Variant.Outlined" />
                     </MudItem>
                     <MudItem xs="12" sm="3">
-                        <MudSelect T="int?" Label="Prefecture" @bind-Value="_pharmacy.PrefectureId"
-                                   Variant="Variant.Outlined" Dense="true" Clearable="true" Searchable="true">
+                        <MudSelect T="int?" Label="Prefecture" @bind-Value="_pharmacy.PrefectureId" Variant="Variant.Outlined" Dense="true" Clearable="true" Searchable="true">
                             @foreach (var p in _prefectures)
                             {
                                 <MudSelectItem T="int?" Value="@p.Id">@p.NameEl</MudSelectItem>
@@ -49,9 +40,7 @@
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" sm="3">
-                        <MudTextField @bind-Value="_pharmacy.ZipCode"
-                                      Label="Zip code"
-                                      Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="_pharmacy.ZipCode" Label="Zip code" Variant="Variant.Outlined" />
                     </MudItem>
                 </MudGrid>
 
@@ -60,21 +49,13 @@
 
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_pharmacy.OwnerName"
-                                      Label="Owner name"
-                                      Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="_pharmacy.OwnerName" Label="Owner name" Variant="Variant.Outlined" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_pharmacy.Email"
-                                      Label="Email"
-                                      Variant="Variant.Outlined"
-                                      Immediate="true"
-                                      OnBlur="ValidateEmail" />
+                        <MudTextField @bind-Value="_pharmacy.Email" Label="Email" Variant="Variant.Outlined" Immediate="true" OnBlur="ValidateEmail" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_pharmacy.Phone"
-                                      Label="Phone"
-                                      Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="_pharmacy.Phone" Label="Phone" Variant="Variant.Outlined" />
                     </MudItem>
                 </MudGrid>
 
@@ -83,37 +64,27 @@
 
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_longitude"
-                                      Label="Longitude"
-                                      Variant="Variant.Outlined"
-                                      Immediate="true"
-                                      OnBlur="TryApplyLongitude" />
+                        <MudTextField @bind-Value="_longitude" Label="Longitude" Variant="Variant.Outlined" Immediate="true" OnBlur="TryApplyLongitude" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_latitude"
-                                      Label="Latitude"
-                                      Variant="Variant.Outlined"
-                                      Immediate="true"
-                                      OnBlur="TryApplyLatitude" />
+                        <MudTextField @bind-Value="_latitude" Label="Latitude" Variant="Variant.Outlined" Immediate="true" OnBlur="TryApplyLatitude" />
                     </MudItem>
                 </MudGrid>
 
                 <MudDivider Class="my-4" />
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Service</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Services</MudText>
 
-                <MudSelect T="int?"
-                           Label="Select service"
-                           @bind-Value="_pharmacy.ServiceId"
-                           Variant="Variant.Outlined">
-                    <MudSelectItem T="int?" Value="@((int?)null)">— none —</MudSelectItem>
-                    @foreach (var s in _services)
+                <MudSelect T="int" Label="Select services" Variant="Variant.Outlined" MultiSelection="true" @bind-SelectedValues="_serviceIdsEnumerable" ToStringFunc="@(id => _allServices.FirstOrDefault(s => s.Id == id)?.Name ?? id.ToString())">
+                    @foreach (var s in _allServices)
                     {
-                        <MudSelectItem T="int?" Value="@s.Id">@s.Name</MudSelectItem>
+                        var takenByOther = s.PharmacyId != null && s.PharmacyId != _pharmacy!.Id;
+                        <MudSelectItem T="int" Value="@s.Id" Disabled="@takenByOther">
+                            @s.Name @((takenByOther ? " (assigned)" : ""))
+                        </MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="TicketingProvider" Label="Ticketing provider"
-                           @bind-Value="_pharmacy.TicketingProvider"
-                           Variant="Variant.Outlined" Class="mt-3">
+
+                <MudSelect T="TicketingProvider" Label="Ticketing provider" @bind-Value="_pharmacy.TicketingProvider" Variant="Variant.Outlined" Class="mt-3">
                     <MudSelectItem T="TicketingProvider" Value="TicketingProvider.None">— none —</MudSelectItem>
                     <MudSelectItem T="TicketingProvider" Value="TicketingProvider.NemoQ">NemoQ</MudSelectItem>
                     <MudSelectItem T="TicketingProvider" Value="TicketingProvider.Ready">Ready</MudSelectItem>
@@ -124,18 +95,11 @@
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="@(() => DialogInstance?.Cancel())">
-            Cancel
-        </MudButton>
-        <MudButton Color="Color.Primary"
-                   Variant="Variant.Filled"
-                   Disabled="_saving"
-                   OnClick="Save">
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_saving" OnClick="Save">
             @if (_saving)
             {
-                <MudProgressCircular Size="Size.Small"
-                                     Indeterminate="true"
-                                     Class="mr-2" />
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
             }
             Save
         </MudButton>
@@ -145,63 +109,61 @@
 @code {
     [CascadingParameter] public IMudDialogInstance? DialogInstance { get; set; }
     [Parameter] public int PharmacyId { get; set; }
+
+    private MudForm? _form = null!;
+    private Pharmacy? _pharmacy;
+    private HashSet<int> _serviceIds = new();
+    private List<Service> _allServices = new();
     private List<Prefecture> _prefectures = new();
 
-    private MudForm? _form;
-    private Pharmacy? _pharmacy;
     private bool _loading = true;
     private bool _saving;
-
-    private List<Service> _services = new();
 
     private string? _longitude;
     private string? _latitude;
 
+    private IEnumerable<int> _serviceIdsEnumerable
+    {
+        get => _serviceIds;
+        set => _serviceIds = value?.ToHashSet() ?? new HashSet<int>();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         _pharmacy = await Db.Pharmacies.FirstOrDefaultAsync(p => p.Id == PharmacyId);
-        _services = await Db.Services
-            .Where(s => s.IsActive)
-            .OrderBy(s => s.Name)
-            .ToListAsync();
-
-        _prefectures = await Db.Prefectures
-        .Where(p => p.IsActive)
-        .OrderBy(p => p.NameEl)
-        .ToListAsync();
+        _allServices = await Db.Services.OrderBy(s => s.Name).ToListAsync();
 
         if (_pharmacy is not null)
         {
+            var ids = await Db.Services
+                .Where(s => s.PharmacyId == _pharmacy.Id)
+                .Select(s => s.Id)
+                .ToListAsync();
+            _serviceIds = new HashSet<int>(ids);
+
             _longitude = _pharmacy.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
             _latitude = _pharmacy.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
+
+        _prefectures = await Db.Prefectures
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.NameEl)
+            .ToListAsync();
 
         _loading = false;
     }
 
     private void ValidateEmail(FocusEventArgs args)
     {
-        if (string.IsNullOrWhiteSpace(_pharmacy?.Email))
-            return;
-
-        try
-        {
-            _ = new System.Net.Mail.MailAddress(_pharmacy!.Email);
-        }
-        catch
-        {
-            Snackbar.Add("Invalid email format.", Severity.Warning);
-        }
+        if (string.IsNullOrWhiteSpace(_pharmacy?.Email)) return;
+        try { _ = new System.Net.Mail.MailAddress(_pharmacy!.Email); }
+        catch { Snackbar.Add("Invalid email format.", Severity.Warning); }
     }
 
     private void TryApplyLongitude(FocusEventArgs _)
     {
         if (_pharmacy is null) return;
-
-        if (double.TryParse(_longitude,
-                            System.Globalization.NumberStyles.Float,
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            out var val))
+        if (double.TryParse(_longitude, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var val))
             _pharmacy.Longitude = val;
         else
             Snackbar.Add("Invalid longitude.", Severity.Warning);
@@ -210,11 +172,7 @@
     private void TryApplyLatitude(FocusEventArgs _)
     {
         if (_pharmacy is null) return;
-
-        if (double.TryParse(_latitude,
-                            System.Globalization.NumberStyles.Float,
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            out var val))
+        if (double.TryParse(_latitude, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var val))
             _pharmacy.Latitude = val;
         else
             Snackbar.Add("Invalid latitude.", Severity.Warning);
@@ -229,8 +187,7 @@
         }
 
         await _form!.Validate();
-        if (!_form.IsValid)
-            return;
+        if (!_form.IsValid) return;
 
         if (string.IsNullOrWhiteSpace(_pharmacy.Name))
         {
@@ -241,7 +198,29 @@
         try
         {
             _saving = true;
+
             Db.Pharmacies.Update(_pharmacy);
+
+            var current = await Db.Services
+                .Where(s => s.PharmacyId == _pharmacy.Id)
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            var toAdd = _serviceIds.Except(current).ToList();
+            var toRemove = current.Except(_serviceIds).ToList();
+
+            if (toAdd.Count > 0)
+            {
+                var addEntities = await Db.Services.Where(s => toAdd.Contains(s.Id)).ToListAsync();
+                foreach (var s in addEntities)
+                    s.PharmacyId = _pharmacy.Id; // assign
+            }
+
+            if (toRemove.Count > 0)
+            {
+                Snackbar.Add("Unassign not allowed: Service.PharmacyId is non-nullable.", Severity.Warning);
+            }
+
             await Db.SaveChangesAsync();
 
             Snackbar.Add("Pharmacy updated successfully.", Severity.Success);

@@ -31,6 +31,15 @@ namespace Nbg.Touchscreen.Admin.Data
             {
                 e.ToTable("Services");
             });
+
+            builder.Entity<Service>(e =>
+            {
+                e.ToTable("Services");
+                e.HasOne(s => s.Pharmacy)
+                 .WithMany(p => p.Services)
+                 .HasForeignKey(s => s.PharmacyId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }
