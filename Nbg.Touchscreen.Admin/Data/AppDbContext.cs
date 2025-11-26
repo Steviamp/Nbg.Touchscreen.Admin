@@ -12,6 +12,8 @@ namespace Nbg.Touchscreen.Admin.Data
         public DbSet<Queue> Queues { get; set; } = default!;
         public DbSet<AppSetting> AppSettings { get; set; } = default!;
         public DbSet<Prefecture> Prefectures => Set<Prefecture>();
+        public DbSet<GlobalHoliday> GlobalHolidays => Set<GlobalHoliday>();
+        public DbSet<ServiceHoliday> ServiceHolidays => Set<ServiceHoliday>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -39,6 +41,31 @@ namespace Nbg.Touchscreen.Admin.Data
                  .WithMany(p => p.Services)
                  .HasForeignKey(s => s.PharmacyId)
                  .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<GlobalHoliday>(e =>
+            {
+                e.Property(x => x.Date);
+                e.Property(x => x.RecurringMonth);
+                e.Property(x => x.RecurringDay);
+                e.HasIndex(x => new { x.RecurringMonth, x.RecurringDay })
+                 .HasFilter("[IsRecurring]=1 AND [IsActive]=1")
+                 .IsUnique();
+                e.HasIndex(x => x.Date)
+                 .HasFilter("[IsRecurring]=0 AND [IsActive]=1")
+                 .IsUnique();
+            });
+
+            builder.Entity<ServiceHoliday>(e =>
+            {
+                e.HasOne(x => x.Service).WithMany().HasForeignKey(x => x.ServiceId).OnDelete(DeleteBehavior.Cascade);
+                e.HasIndex(x => x.ServiceId);
+                e.HasIndex(x => new { x.ServiceId, x.RecurringMonth, x.RecurringDay, x.OverrideMode })
+                 .HasFilter("[IsRecurring]=1 AND [IsActive]=1")
+                 .IsUnique();
+                e.HasIndex(x => new { x.ServiceId, x.Date, x.OverrideMode })
+                 .HasFilter("[IsRecurring]=0 AND [IsActive]=1")
+                 .IsUnique();
             });
         }
     }

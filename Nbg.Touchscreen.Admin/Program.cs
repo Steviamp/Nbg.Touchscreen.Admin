@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Nbg.Touchscreen.Admin.Components;
 using Nbg.Touchscreen.Admin.Data;
+using Nbg.Touchscreen.Admin.Data.helpers;
 using Nbg.Touchscreen.Admin.Endpoints;
 using Serilog;
 using Serilog.Events;
@@ -40,6 +41,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<HolidayService>();
 
 var logsPath = Path.Combine(AppContext.BaseDirectory, "App_Data", "logs");
 Directory.CreateDirectory(logsPath);

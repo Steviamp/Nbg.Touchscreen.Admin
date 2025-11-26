@@ -3,7 +3,6 @@
 @using Microsoft.EntityFrameworkCore
 @using MudBlazor
 @using Nbg.Touchscreen.Admin.Data
-@using System.Text.Json
 @inject AppDbContext Db
 @inject ISnackbar Snackbar
 
@@ -53,7 +52,7 @@
                 <MudDivider Class="my-4" />
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Working hours (ticket issuing)</MudText>
 
-                <!-- Monday -->
+                @* Monday *@
                 <div class="d-flex align-center mb-3" style="gap: 12px;">
                     <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
                         <input type="checkbox"
@@ -63,22 +62,16 @@
                         <span>Monday</span>
                     </label>
 
-                    <MudTimePicker @bind-Time="_mondayFrom"
-                                   Label="από"
-                                   Disabled="!_mondayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_mondayFrom" Label="από"
+                                   Disabled="!_mondayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_mondayTo"
-                                   Label="έως"
-                                   Disabled="!_mondayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_mondayTo" Label="έως"
+                                   Disabled="!_mondayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
                 </div>
 
-                <!-- Tuesday -->
+                @* Tuesday *@
                 <div class="d-flex align-center mb-3" style="gap: 12px;">
                     <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
                         <input type="checkbox"
@@ -88,22 +81,16 @@
                         <span>Tuesday</span>
                     </label>
 
-                    <MudTimePicker @bind-Time="_tuesdayFrom"
-                                   Label="από"
-                                   Disabled="!_tuesdayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_tuesdayFrom" Label="από"
+                                   Disabled="!_tuesdayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_tuesdayTo"
-                                   Label="έως"
-                                   Disabled="!_tuesdayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_tuesdayTo" Label="έως"
+                                   Disabled="!_tuesdayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
                 </div>
 
-                <!-- Wednesday -->
+                @* Wednesday *@
                 <div class="d-flex align-center mb-3" style="gap: 12px;">
                     <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
                         <input type="checkbox"
@@ -113,22 +100,16 @@
                         <span>Wednesday</span>
                     </label>
 
-                    <MudTimePicker @bind-Time="_wednesdayFrom"
-                                   Label="από"
-                                   Disabled="!_wednesdayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_wednesdayFrom" Label="από"
+                                   Disabled="!_wednesdayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_wednesdayTo"
-                                   Label="έως"
-                                   Disabled="!_wednesdayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_wednesdayTo" Label="έως"
+                                   Disabled="!_wednesdayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
                 </div>
 
-                <!-- Thursday -->
+                @* Thursday *@
                 <div class="d-flex align-center mb-3" style="gap: 12px;">
                     <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
                         <input type="checkbox"
@@ -138,22 +119,16 @@
                         <span>Thursday</span>
                     </label>
 
-                    <MudTimePicker @bind-Time="_thursdayFrom"
-                                   Label="από"
-                                   Disabled="!_thursdayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_thursdayFrom" Label="από"
+                                   Disabled="!_thursdayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_thursdayTo"
-                                   Label="έως"
-                                   Disabled="!_thursdayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_thursdayTo" Label="έως"
+                                   Disabled="!_thursdayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
                 </div>
 
-                <!-- Friday -->
+                @* Friday *@
                 <div class="d-flex align-center mb-3" style="gap: 12px;">
                     <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
                         <input type="checkbox"
@@ -163,22 +138,16 @@
                         <span>Friday</span>
                     </label>
 
-                    <MudTimePicker @bind-Time="_fridayFrom"
-                                   Label="από"
-                                   Disabled="!_fridayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_fridayFrom" Label="από"
+                                   Disabled="!_fridayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_fridayTo"
-                                   Label="έως"
-                                   Disabled="!_fridayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_fridayTo" Label="έως"
+                                   Disabled="!_fridayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
                 </div>
 
-                <!-- Saturday -->
+                @* Saturday *@
                 <div class="d-flex align-center mb-3" style="gap: 12px;">
                     <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
                         <input type="checkbox"
@@ -188,22 +157,16 @@
                         <span>Saturday</span>
                     </label>
 
-                    <MudTimePicker @bind-Time="_saturdayFrom"
-                                   Label="από"
-                                   Disabled="!_saturdayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_saturdayFrom" Label="από"
+                                   Disabled="!_saturdayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_saturdayTo"
-                                   Label="έως"
-                                   Disabled="!_saturdayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_saturdayTo" Label="έως"
+                                   Disabled="!_saturdayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
                 </div>
 
-                <!-- Sunday -->
+                @* Sunday *@
                 <div class="d-flex align-center mb-3" style="gap: 12px;">
                     <label class="d-flex align-center" style="min-width: 120px; cursor: pointer;">
                         <input type="checkbox"
@@ -213,52 +176,68 @@
                         <span>Sunday</span>
                     </label>
 
-                    <MudTimePicker @bind-Time="_sundayFrom"
-                                   Label="από"
-                                   Disabled="!_sundayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_sundayFrom" Label="από"
+                                   Disabled="!_sundayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
 
-                    <MudTimePicker @bind-Time="_sundayTo"
-                                   Label="έως"
-                                   Disabled="!_sundayEnabled"
-                                   AmPm="false"
-                                   Variant="Variant.Outlined"
-                                   Style="flex: 1;" />
+                    <MudTimePicker @bind-Time="_sundayTo" Label="έως"
+                                   Disabled="!_sundayEnabled" AmPm="false"
+                                   Variant="Variant.Outlined" Style="flex: 1;" />
                 </div>
 
-                <!-- Bank holidays -->
+                <!-- Service-specific holiday overrides -->
                 <MudDivider Class="my-4" />
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Bank holidays (no ticket issuing)</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Service holidays</MudText>
 
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2" Spacing="2">
-                    <MudDatePicker @bind-Date="_newHolidayDate"
-                                   Label="Add bank holiday"
-                                   DateFormat="dd/MM/yyyy"
-                                   Variant="Variant.Outlined"
-                                   Class="flex-grow-1" />
-                    <MudButton Variant="Variant.Outlined"
-                               OnClick="AddHoliday"
-                               Style="min-width: 80px;">
-                        Add
-                    </MudButton>
-                </MudStack>
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.subtitle2">Extra closed days</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2 mt-1">
+                            <MudDatePicker @bind-Date="_newClosedDate"
+                                           Label="Add date"
+                                           DateFormat="dd/MM/yyyy"
+                                           Variant="Variant.Outlined"
+                                           Class="flex-grow-1" />
+                            <MudButton Variant="Variant.Outlined" OnClick="AddClosedDate" Style="min-width:80px;">Add</MudButton>
+                        </MudStack>
 
-                @if (_bankHolidays.Any())
-                {
-                    <MudChipSet T="DateOnly">
-                        @foreach (var d in _bankHolidays.OrderBy(d => d))
+                        @if (_closedDates.Any())
                         {
-                            <MudChip T="DateOnly"
-                                     Value="d"
-                                     Closeable="true"
-                                     OnClose="@(() => RemoveHoliday(d))">
-                                @d.ToString("dd/MM/yyyy")
-                            </MudChip>
+                            <MudChipSet T="DateOnly">
+                                @foreach (var d in _closedDates.OrderBy(d => d))
+                                {
+                                    <MudChip T="DateOnly" Value="@d" Closeable="true" OnClose="@(() => RemoveClosedDate(d))">
+                                        @d.ToString("dd/MM/yyyy")
+                                    </MudChip>
+                                }
+                            </MudChipSet>
                         }
-                    </MudChipSet>
-                }
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudText Typo="Typo.subtitle2">Open despite holiday</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2 mt-1">
+                            <MudDatePicker @bind-Date="_newOpenDate"
+                                           Label="Add date"
+                                           DateFormat="dd/MM/yyyy"
+                                           Variant="Variant.Outlined"
+                                           Class="flex-grow-1" />
+                            <MudButton Variant="Variant.Outlined" OnClick="AddOpenDate" Style="min-width:80px;">Add</MudButton>
+                        </MudStack>
+
+                        @if (_openDates.Any())
+                        {
+                            <MudChipSet T="DateOnly">
+                                @foreach (var d in _openDates.OrderBy(d => d))
+                                {
+                                    <MudChip T="DateOnly" Value="@d" Closeable="true" OnClose="@(() => RemoveOpenDate(d))">
+                                        @d.ToString("dd/MM/yyyy")
+                                    </MudChip>
+                                }
+                            </MudChipSet>
+                        }
+                    </MudItem>
+                </MudGrid>
 
                 <MudDivider Class="my-4" />
 
@@ -271,14 +250,8 @@
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="@(() => DialogInstance?.Cancel())">
-            Cancel
-        </MudButton>
-
-        <MudButton Color="Color.Primary"
-                   Variant="Variant.Filled"
-                   Disabled="@(_saving || _service is null)"
-                   OnClick="Save">
+        <MudButton OnClick="@(() => DialogInstance?.Cancel())">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(_saving || _service is null)" OnClick="Save">
             @if (_saving)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -329,16 +302,16 @@
     private TimeSpan? _sundayFrom;
     private TimeSpan? _sundayTo;
 
-    private DateTime? _newHolidayDate;
-    private List<DateOnly> _bankHolidays = new();
+    // service holiday overrides (new)
+    private DateTime? _newClosedDate;
+    private DateTime? _newOpenDate;
+    private readonly HashSet<DateOnly> _closedDates = new();
+    private readonly HashSet<DateOnly> _openDates = new();
 
     protected override async Task OnInitializedAsync()
     {
         _service = await Db.Services.FirstOrDefaultAsync(x => x.Id == ServiceId);
-
-        _queues = await Db.Queues
-            .OrderBy(q => q.Name)
-            .ToListAsync();
+        _queues = await Db.Queues.OrderBy(q => q.Name).ToListAsync();
 
         if (_service != null)
         {
@@ -373,36 +346,46 @@
             _sundayFrom = _service.SundayFrom;
             _sundayTo = _service.SundayTo;
 
-            // Load bank holidays
-            if (!string.IsNullOrWhiteSpace(_service.BankHolidaysJson))
+            // Load per-service overrides from DB (one-off dates)
+            var overrides = await Db.ServiceHolidays
+                .AsNoTracking()
+                .Where(h => h.ServiceId == _service.Id && h.IsActive && !h.IsRecurring && h.Date != null)
+                .ToListAsync();
+
+            foreach (var h in overrides)
             {
-                try
-                {
-                    _bankHolidays = JsonSerializer.Deserialize<List<DateOnly>>(_service.BankHolidaysJson!)
-                                    ?? new List<DateOnly>();
-                }
-                catch
-                {
-                    _bankHolidays = new List<DateOnly>();
-                }
+                var d = h.Date!.Value;
+                if (h.OverrideMode == ServiceHolidayOverrideMode.ForceClosed)
+                    _closedDates.Add(d);
+                else
+                    _openDates.Add(d);
             }
         }
 
         _loading = false;
     }
 
-    private void AddHoliday()
+    private void AddClosedDate()
     {
-        if (_newHolidayDate is null) return;
-
-        var d = DateOnly.FromDateTime(_newHolidayDate.Value.Date);
-        if (!_bankHolidays.Contains(d))
-            _bankHolidays.Add(d);
-
-        _newHolidayDate = null;
+        if (_newClosedDate is null) return;
+        var d = DateOnly.FromDateTime(_newClosedDate.Value.Date);
+        _openDates.Remove(d);
+        _closedDates.Add(d);
+        _newClosedDate = null;
     }
 
-    private void RemoveHoliday(DateOnly d) => _bankHolidays.Remove(d);
+    private void RemoveClosedDate(DateOnly d) => _closedDates.Remove(d);
+
+    private void AddOpenDate()
+    {
+        if (_newOpenDate is null) return;
+        var d = DateOnly.FromDateTime(_newOpenDate.Value.Date);
+        _closedDates.Remove(d);
+        _openDates.Add(d);
+        _newOpenDate = null;
+    }
+
+    private void RemoveOpenDate(DateOnly d) => _openDates.Remove(d);
 
     private async Task Save()
     {
@@ -451,11 +434,42 @@
             _service.SundayFrom = _sundayFrom;
             _service.SundayTo = _sundayTo;
 
-            // Save bank holidays
-            _service.BankHolidaysJson = JsonSerializer.Serialize(_bankHolidays);
-
+            // Queue mapping
             _service.QueueId = _queueId;
 
+            var existing = await Db.ServiceHolidays
+                .Where(h => h.ServiceId == _service.Id && h.IsActive && !h.IsRecurring)
+                .ToListAsync();
+
+            Db.ServiceHolidays.RemoveRange(existing);
+
+            foreach (var d in _closedDates)
+            {
+                Db.ServiceHolidays.Add(new ServiceHoliday
+                {
+                    ServiceId = _service.Id,
+                    Name = "Extra closed",
+                    IsRecurring = false,
+                    Date = d,
+                    OverrideMode = ServiceHolidayOverrideMode.ForceClosed,
+                    IsActive = true
+                });
+            }
+
+            foreach (var d in _openDates)
+            {
+                Db.ServiceHolidays.Add(new ServiceHoliday
+                {
+                    ServiceId = _service.Id,
+                    Name = "Open despite holiday",
+                    IsRecurring = false,
+                    Date = d,
+                    OverrideMode = ServiceHolidayOverrideMode.ForceOpen,
+                    IsActive = true
+                });
+            }
+
+            Db.Services.Update(_service);
             await Db.SaveChangesAsync();
 
             Snackbar.Add("Service updated.", Severity.Success);
