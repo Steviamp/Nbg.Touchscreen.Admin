@@ -42,6 +42,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<HolidayService>();
+builder.Services.AddScoped<ISoapService, SoapService>();
 
 var logsPath = Path.Combine(AppContext.BaseDirectory, "App_Data", "logs");
 Directory.CreateDirectory(logsPath);
