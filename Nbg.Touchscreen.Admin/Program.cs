@@ -13,13 +13,9 @@ using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
-    .AddCircuitOptions(options =>
-    {
-        options.DetailedErrors = true;
-    });
+    .AddCircuitOptions(options => { options.DetailedErrors = true; });
 
 builder.Services.AddMudServices();
 
@@ -31,7 +27,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         o.LoginPath = "/login";
         o.AccessDeniedPath = "/forbidden";
-        o.ExpireTimeSpan = TimeSpan.FromMinutes(30); // αυτόματο logout μετά από 30 λεπτά
+        o.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         o.SlidingExpiration = false;
     });
 
@@ -42,7 +38,14 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<HolidayService>();
+
 builder.Services.AddScoped<ISoapService, SoapService>();
+
+builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 
 var logsPath = Path.Combine(AppContext.BaseDirectory, "App_Data", "logs");
 Directory.CreateDirectory(logsPath);
@@ -66,11 +69,12 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
 var app = builder.Build();
+
 
 var logsRoot = Path.Combine(AppContext.BaseDirectory, "App_Data", "logs");
 
-// Λίστα αρχείων log
 app.MapGet("/admin/api/logs", [Authorize] () =>
 {
     if (!Directory.Exists(logsRoot))
@@ -88,19 +92,25 @@ app.MapGet("/admin/api/logs", [Authorize] () =>
     return Results.Ok(files);
 });
 
-// Download συγκεκριμένου log
 app.MapGet("/admin/api/logs/{name}", [Authorize] (string name) =>
 {
-    // basic sanitization
     if (string.IsNullOrWhiteSpace(name) || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         return Results.BadRequest();
 
     var full = Path.Combine(logsRoot, name);
-    if (!full.StartsWith(logsRoot)) return Results.BadRequest(); // ασφάλεια path traversal
-    if (!System.IO.File.Exists(full)) return Results.NotFound();
+    if (!full.StartsWith(logsRoot)) return Results.BadRequest();
+    if (!File.Exists(full)) return Results.NotFound();
 
     return Results.File(full, "text/plain", fileDownloadName: name);
 });
+
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
@@ -109,9 +119,12 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 
+app.MapControllers();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
 app.MapAuthEndpoints();
 
 app.Run();
